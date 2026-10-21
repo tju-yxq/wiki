@@ -1,48 +1,42 @@
 ---
 layout: home
-
-hero:
-  name: "xdz' wiki"
-  text: 学习与工程的第二大脑
-  tagline: LLM Safety · Multi-Agent System · AI Infra
-  actions:
-    - theme: brand
-      text: 开始阅读
-      link: /notes/
-    - theme: alt
-      text: 学术主页
-      link: https://tju-yxq.github.io/homepage/
-    - theme: alt
-      text: GitHub
-      link: https://github.com/tju-yxq/wiki
-
-features:
-  - title: LLM Safety
-    details: 后训练安全对齐、安全感知偏好优化、个性化安全适配、多轮越狱鲁棒性。
-    link: /notes/llm-safety/
-    linkText: 进入分类
-  - title: Multi-Agent System
-    details: 多智能体协作与对抗、自动化漏洞挖掘、Agent 工程化的踩坑记录。
-    link: /notes/multi-agent/
-    linkText: 进入分类
-  - title: AI Infra
-    details: 训练与推理基础设施、GPU 资源调度、部署与性能优化。
-    link: /notes/ai-infra/
-    linkText: 进入分类
-  - title: 网络安全
-    details: Web 漏洞原理与复现、渗透测试方法论、CTF 与竞赛复盘。
-    link: /notes/security/
-    linkText: 进入分类
-  - title: 工程与环境
-    details: 环境配置、工具链、部署流水线，以及那些「早点知道就好了」的事。
-    link: /notes/engineering/
-    linkText: 进入分类
 ---
 
-## 这个站点是什么
+<div class="cover">
+  <p class="cover__eyebrow">xdz' wiki</p>
+  <h1 class="cover__title">笔记写到能复现为止</h1>
+  <p class="cover__meta">LLM Safety · Multi-Agent System · AI Infra · Cybersecurity · Engineering</p>
+</div>
 
-这里放长笔记：读论文的推导、漏洞复现的过程、踩过的坑、可复用的配置。
-线性叙述和正式产出在[学术主页](https://tju-yxq.github.io/homepage/)，这里更像是工作台。
-
-全站内容都是 Markdown，源码在 [tju-yxq/wiki](https://github.com/tju-yxq/wiki)，
-每次推送自动构建部署。怎么加一篇笔记见[使用说明](/guide/)。
+<nav class="index" aria-label="笔记分类">
+  <a class="index__row" href="notes/llm-safety/">
+    <span class="index__no">01</span>
+    <span class="index__name">LLM Safety</span>
+    <span class="index__desc">安全对齐、偏好优化、多轮越狱鲁棒性</span>
+    <span class="index__arrow" aria-hidden="true">→</span>
+  </a>
+  <a class="index__row" href="notes/multi-agent/">
+    <span class="index__no">02</span>
+    <span class="index__name">Multi-Agent System</span>
+    <span class="index__desc">协作与对抗、自动化漏洞挖掘、Agent 工程</span>
+    <span class="index__arrow" aria-hidden="true">→</span>
+  </a>
+  <a class="index__row" href="notes/ai-infra/">
+    <span class="index__no">03</span>
+    <span class="index__name">AI Infra</span>
+    <span class="index__desc">训练与推理基础设施、GPU 调度、部署与性能</span>
+    <span class="index__arrow" aria-hidden="true">→</span>
+  </a>
+  <a class="index__row" href="notes/security/">
+    <span class="index__no">04</span>
+    <span class="index__name">Cybersecurity</span>
+    <span class="index__desc">Web 漏洞原理与复现、渗透方法论、竞赛复盘</span>
+    <span class="index__arrow" aria-hidden="true">→</span>
+  </a>
+  <a class="index__row" href="notes/engineering/">
+    <span class="index__no">05</span>
+    <span class="index__name">Engineering</span>
+    <span class="index__desc">环境配置、工具链、部署流水线</span>
+    <span class="index__arrow" aria-hidden="true">→</span>
+  </a>
+</nav>

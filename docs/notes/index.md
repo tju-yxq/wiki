@@ -1,14 +1,14 @@
 # 笔记总览
 
-按主题分四类。每篇笔记的入口都会同时出现在左侧目录里，这里只做一次索引。
+按主题分五类。每篇笔记的入口都会同时出现在左侧目录里，这里只做一次索引。
 
 | 分类 | 关注点 | 入口 |
 | --- | --- | --- |
 | LLM Safety | 对齐、偏好优化、越狱鲁棒性 | [进入](/notes/llm-safety/) |
 | Multi-Agent System | 协作与对抗、漏洞挖掘、Agent 工程 | [进入](/notes/multi-agent/) |
 | AI Infra | 训练推理基础设施、GPU 调度、部署与性能 | [进入](/notes/ai-infra/) |
-| 网络安全 | Web 漏洞、渗透方法论、竞赛复盘 | [进入](/notes/security/) |
-| 工程与环境 | 环境配置、工具链、部署 | [进入](/notes/engineering/) |
+| Cybersecurity | Web 漏洞、渗透方法论、竞赛复盘 | [进入](/notes/security/) |
+| Engineering | 环境配置、工具链、部署 | [进入](/notes/engineering/) |
 
 ## 约定
 

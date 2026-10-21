@@ -31,9 +31,10 @@ docs/                    所有内容（只有这里会被发布）
     llm-safety/          LLM Safety
     multi-agent/         Multi-Agent System
     ai-infra/            AI Infra
-    security/            网络安全
-    engineering/         工程与环境
+    security/            Cybersecurity
+    engineering/         Engineering
   .vitepress/config.mts  站点配置（导航、侧边栏、搜索）
+  .vitepress/theme/      自定义样式（品牌色、版心宽度、首页封面排版）
   public/                静态资源与独立 HTML 页面，原样复制到产物根目录
 .github/workflows/deploy.yml  自动部署
 ```

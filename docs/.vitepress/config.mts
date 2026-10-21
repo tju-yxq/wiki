@@ -66,12 +66,12 @@ export default defineConfig({
           items: [{ text: '本类说明', link: '/notes/ai-infra/' }]
         },
         {
-          text: '网络安全',
+          text: 'Cybersecurity',
           collapsed: false,
           items: [{ text: '本类说明', link: '/notes/security/' }]
         },
         {
-          text: '工程与环境',
+          text: 'Engineering',
           collapsed: false,
           items: [{ text: '本类说明', link: '/notes/engineering/' }]
         }
