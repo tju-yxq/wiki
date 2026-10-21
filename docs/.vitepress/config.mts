@@ -9,7 +9,7 @@ export default defineConfig({
   base,
   lang: 'zh-CN',
   title: "xdz' wiki",
-  description: '网络安全 · 大模型安全 · 多智能体 —— 学习笔记与工程记录',
+  description: 'LLM Safety · Multi-Agent System · AI Infra —— 学习笔记与工程记录',
   cleanUrls: false,
   lastUpdated: true,
 
@@ -51,14 +51,19 @@ export default defineConfig({
           items: [{ text: '全部笔记', link: '/notes/' }]
         },
         {
-          text: '大模型安全',
+          text: 'LLM Safety',
           collapsed: false,
           items: [{ text: '本类说明', link: '/notes/llm-safety/' }]
         },
         {
-          text: '多智能体',
+          text: 'Multi-Agent System',
           collapsed: false,
           items: [{ text: '本类说明', link: '/notes/multi-agent/' }]
+        },
+        {
+          text: 'AI Infra',
+          collapsed: false,
+          items: [{ text: '本类说明', link: '/notes/ai-infra/' }]
         },
         {
           text: '网络安全',

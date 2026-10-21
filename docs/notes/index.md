@@ -4,8 +4,9 @@
 
 | 分类 | 关注点 | 入口 |
 | --- | --- | --- |
-| 大模型安全 | 对齐、偏好优化、越狱鲁棒性 | [进入](/notes/llm-safety/) |
-| 多智能体 | 协作与对抗、漏洞挖掘、Agent 工程 | [进入](/notes/multi-agent/) |
+| LLM Safety | 对齐、偏好优化、越狱鲁棒性 | [进入](/notes/llm-safety/) |
+| Multi-Agent System | 协作与对抗、漏洞挖掘、Agent 工程 | [进入](/notes/multi-agent/) |
+| AI Infra | 训练推理基础设施、GPU 调度、部署与性能 | [进入](/notes/ai-infra/) |
 | 网络安全 | Web 漏洞、渗透方法论、竞赛复盘 | [进入](/notes/security/) |
 | 工程与环境 | 环境配置、工具链、部署 | [进入](/notes/engineering/) |
 

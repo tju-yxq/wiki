@@ -4,7 +4,7 @@ layout: home
 hero:
   name: "xdz' wiki"
   text: 学习与工程的第二大脑
-  tagline: 网络安全 · 大模型安全 · 多智能体系统
+  tagline: LLM Safety · Multi-Agent System · AI Infra
   actions:
     - theme: brand
       text: 开始阅读
@@ -17,13 +17,17 @@ hero:
       link: https://github.com/tju-yxq/wiki
 
 features:
-  - title: 大模型安全
+  - title: LLM Safety
     details: 后训练安全对齐、安全感知偏好优化、个性化安全适配、多轮越狱鲁棒性。
     link: /notes/llm-safety/
     linkText: 进入分类
-  - title: 多智能体
+  - title: Multi-Agent System
     details: 多智能体协作与对抗、自动化漏洞挖掘、Agent 工程化的踩坑记录。
     link: /notes/multi-agent/
+    linkText: 进入分类
+  - title: AI Infra
+    details: 训练与推理基础设施、GPU 资源调度、部署与性能优化。
+    link: /notes/ai-infra/
     linkText: 进入分类
   - title: 网络安全
     details: Web 漏洞原理与复现、渗透测试方法论、CTF 与竞赛复盘。
