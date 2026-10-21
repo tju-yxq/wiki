@@ -22,8 +22,11 @@ export default defineConfig({
   ],
 
   sitemap: {
-    // VitePress 不会把 base 拼进 sitemap 的 loc，所以这里要带上 /wiki
-    hostname: `${siteUrl}/wiki`
+    // VitePress 用 new URL(item.url, hostname) 拼 sitemap，而 url 是 "/about.html"
+    // 这样的绝对路径，会直接把 base 吃掉。所以：hostname 带尾斜杠 + 把 url 转成相对。
+    hostname: `${siteUrl}/wiki/`,
+    transformItems: (items) =>
+      items.map((item) => ({ ...item, url: String(item.url).replace(/^\//, '') }))
   },
 
   markdown: {
