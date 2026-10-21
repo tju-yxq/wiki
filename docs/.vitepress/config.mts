@@ -13,6 +13,12 @@ export default defineConfig({
   cleanUrls: false,
   lastUpdated: true,
 
+  // public/ 里有的独立讲义的配套文件是 .md（例如 attention-explainer-script.md）。
+  // VitePress 会把 srcDir 下所有 .md 当作页面并做死链检查，于是 public 里那份
+  // 讲解稿内部的相对链接会被误判成死链。这里把 public 排除出页面扫描；
+  // public 的“原样复制到产物”由 publicDir 机制负责，不受影响。
+  srcExclude: ['public/**'],
+
   head: [
     ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: `${base}images/favicon-32x32.png` }],
     ['link', { rel: 'apple-touch-icon', sizes: '180x180', href: `${base}images/apple-touch-icon.png` }],
@@ -63,7 +69,10 @@ export default defineConfig({
         {
           text: 'AI Infra',
           collapsed: false,
-          items: [{ text: '本类说明', link: '/notes/ai-infra/' }]
+          items: [
+            { text: '本类说明', link: '/notes/ai-infra/' },
+            { text: '长上下文注意力图解', link: '/notes/ai-infra/long-context-attention' }
+          ]
         },
         {
           text: 'Cybersecurity',
