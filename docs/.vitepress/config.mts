@@ -95,6 +95,17 @@ export default defineConfig({
 
     outline: { level: [2, 3], label: '本页目录' },
     docFooter: { prev: '上一篇', next: '下一篇' },
+
+    // 404 页文案。默认是英文的 "PAGE NOT FOUND"，
+    // 而且 GitHub Pages 会把 404 响应也缓存 10 分钟，所以这里点明「先硬刷新」。
+    notFound: {
+      title: '这个地址没有内容',
+      quote:
+        '可能是链接写错了，也可能是内容刚刚发布、而你的浏览器还缓存着旧的那份 404。' +
+        'GitHub Pages 会把 404 响应也缓存 10 分钟，按下 Ctrl + Shift + R 硬刷新一次通常就好。',
+      linkText: '回到首页',
+      linkLabel: '回到首页'
+    },
     lastUpdated: { text: '最后更新于', formatOptions: { dateStyle: 'short', timeStyle: 'short' } },
     returnToTopLabel: '回到顶部',
     sidebarMenuLabel: '目录',
