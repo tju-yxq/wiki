@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  name: 喻新强的笔记
+  name: "xdz' wiki"
   text: 学习与工程的第二大脑
   tagline: 网络安全 · 大模型安全 · 多智能体系统
   actions:

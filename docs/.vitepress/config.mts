@@ -8,7 +8,7 @@ const siteUrl = 'https://tju-yxq.github.io'
 export default defineConfig({
   base,
   lang: 'zh-CN',
-  title: '喻新强的笔记',
+  title: "xdz' wiki",
   description: '网络安全 · 大模型安全 · 多智能体 —— 学习笔记与工程记录',
   cleanUrls: false,
   lastUpdated: true,

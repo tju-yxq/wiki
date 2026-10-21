@@ -1,4 +1,4 @@
-# 喻新强的笔记 wiki
+# xdz' wiki
 
 个人技术笔记站，构建产物部署在 **<https://tju-yxq.github.io/wiki/>**。
 
