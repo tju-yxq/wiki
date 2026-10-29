@@ -6,6 +6,8 @@
 
 - [长上下文注意力：存与读的两本账](/notes/ai-infra/long-context-attention) ——
   DSA / QSA / MSA / CSA / HCA 五种机制的独立图解讲义，含交互实验与预算计算器
+- [block_size 对混合注意力推理的影响](/notes/ai-infra/block-size-hybrid) ——
+  vLLM HMA 下块大小被 lcm 推导、用户不可调的代价：kernel / KV 传输 / 前缀复用 / 显存尾块四维实测，含 12 张实验图
 
 ## 计划中的笔记
 

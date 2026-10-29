@@ -71,7 +71,8 @@ export default defineConfig({
           collapsed: false,
           items: [
             { text: '本类说明', link: '/notes/ai-infra/' },
-            { text: '长上下文注意力图解', link: '/notes/ai-infra/long-context-attention' }
+            { text: '长上下文注意力图解', link: '/notes/ai-infra/long-context-attention' },
+            { text: 'block_size 对混合注意力推理的影响', link: '/notes/ai-infra/block-size-hybrid' }
           ]
         },
         {
