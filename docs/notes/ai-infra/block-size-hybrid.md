@@ -28,38 +28,38 @@ vLLM 的 HMA（Hybrid Memory Allocator）为了让异构缓存对象**共用一�
 
 自写 Triton paged-decode kernel（vLLM v2 结构），扫 16 种块大小 × 8 个配置。
 
-![kernel：块大小 vs 解码延迟](/wiki/images/block-size/kernel_block_size_latency.png)
+![kernel：块大小 vs 解码延迟](./block-size/kernel_block_size_latency.png)
 
-![kernel：lane padding](/wiki/images/block-size/kernel_lane_padding.png)
+![kernel：lane padding](./block-size/kernel_lane_padding.png)
 
 - **8 个配置出现 8 种最优块大小**，不存在通用最优；
 - 32–512 内仅 **3/8** 配置互相在 1.10× 内；bs≤16 最差 **6.32×**；
 - lane padding 占 **7.3%**（1.2155–1.3046 ms）；
 - 后端白名单：FlashInfer 只接受 16/32/64，**528 与 1568 各丢 3 条路径**。
 
-![kernel：后端白名单](/wiki/images/block-size/kernel_backend_whitelist.png)
+![kernel：后端白名单](./block-size/kernel_backend_whitelist.png)
 
 ### ② KV 传输模拟
 
 解析模型（描述符 + 链路时延），并用真机 gather 基准标定（**100.3–103.7 GB/s**）。
 
-![传输：块大小 vs 端到端时延](/wiki/images/block-size/kv_transfer_latency_vs_blocksize.png)
+![传输：块大小 vs 端到端时延](./block-size/kv_transfer_latency_vs_blocksize.png)
 
-![传输：冲突区](/wiki/images/block-size/kv_transfer_conflict_zone.png)
+![传输：冲突区](./block-size/kv_transfer_conflict_zone.png)
 
 - 128k 上下文、RDMA 400G：bs 16→1024 为 **803.6→410.5 ms（−48.9%）**；
 - NVLink4：**927.2→56.2 ms（16.5×）**；
 - 传输维度与 kernel 同向，**偏好大块**。
 
-![传输：gather 带宽](/wiki/images/block-size/kv_gather_bandwidth_vs_blocksize.png)
+![传输：gather 带宽](./block-size/kv_gather_bandwidth_vs_blocksize.png)
 
 ### ③ 前缀缓存复用仿真
 
 4 组真实 trace（Mooncake Conversation / Tool-Agent、LMCache Agentic、合成 Agentic），1200 请求 / 1685 万 token。
 
-![复用：命中率 vs 块大小](/wiki/images/block-size/prefix_hit_vs_block_size.png)
+![复用：命中率 vs 块大小](./block-size/prefix_hit_vs_block_size.png)
 
-![复用：512 vs 528](/wiki/images/block-size/prefix_512_vs_528.png)
+![复用：512 vs 528](./block-size/prefix_512_vs_528.png)
 
 | 负载 | 特征 | bs≤512 | bs=528 | 相对损失 |
 |---|---|---:|---:|---:|
@@ -75,9 +75,9 @@ vLLM 的 HMA（Hybrid Memory Allocator）为了让异构缓存对象**共用一�
 
 分配器模型 + 8 GB 池仿真。
 
-![容量：端到端并发](/wiki/images/block-size/e2e_capacity.png)
+![容量：端到端并发](./block-size/e2e_capacity.png)
 
-![容量：零填充分配器收益](/wiki/images/block-size/zeropad_allocator_gain.png)
+![容量：零填充分配器收益](./block-size/zeropad_allocator_gain.png)
 
 - 块越大尾块浪费越多：bs=2048 时尾块浪费占真实 token 的 **28.7%**（bs=512 为 1.77%、34.9 MiB/请求）；
 - 600-token 短请求并发随块增大 **95→55（−42%）**。
@@ -86,7 +86,7 @@ vLLM 的 HMA（Hybrid Memory Allocator）为了让异构缓存对象**共用一�
 
 32k 上下文 + 256 token 输出 + PD 分离 + RDMA400G。
 
-![合成：四维权衡](/wiki/images/block-size/synthesis_tradeoff.png)
+![合成：四维权衡](./block-size/synthesis_tradeoff.png)
 
 - 最优点 **bs=256**；
 - 偏离代价：bs=16 **+443.8 ms**、528 **+31.6 ms**、1024 **+38.5 ms**、512 **+14.8 ms**、64 **+11.2 ms**。
@@ -95,7 +95,7 @@ vLLM 的 HMA（Hybrid Memory Allocator）为了让异构缓存对象**共用一�
 
 **vLLM 混合注意力（HMA）**：统一页取各缓存对象 `block_size` 的 lcm，全注意力层的 `block_size` 因此被**推导**出来 —— 设计文档 Case 4 明写 "increase `block_size` until ≥ `state_size_mamba`"，并承认可能**超过 400、"too large"**；实测线上取值 **528**（Qwen3.5 hybrid）、**1568**、**2096**（Qwen3.5-397B/TP2）。
 
-![可行性：lcm 网格](/wiki/images/block-size/lcm_feasibility_grid.png)
+![可行性：lcm 网格](./block-size/lcm_feasibility_grid.png)
 
 **同类工作均把粒度固定或推导**：AVMP 按张量形状推导、vTensor 恒 2 MB、GraniKV 默认取 1、DualPools 固定 512 —— **四家都没有把 `block_size` 当变量扫过**。
 
