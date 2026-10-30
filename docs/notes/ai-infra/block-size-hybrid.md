@@ -51,6 +51,17 @@ $$P=\frac{b_{j^*}\cdot\Lambda}{m_{j^*}}$$
 
 **一句话**：损失主要来自「**块大小与负载共享粒度不对齐**」，而不是块大小本身；**kernel/传输偏好大块，复用/尾块偏好小块**，四维合一的均衡点在 **128–256**。
 
+### 2.1 「固定」才是问题，不是「值大」
+
+把结论从“值多大多小”换到“这个值被固定意味着什么”，问题性质就变了——前者不同负载各有答案，后者是结构性缺陷。
+
+1. **失去调节入口**：普通模型上 `--block-size` 一直是公开参数，上游正在把默认值从 16 调到 64（PR #63231）；混合注意力模型的块大小由统一页 lcm 推导，显式指定会被覆盖。
+2. **决定权落在无关组件上**：块大小由最大的缓存对象（Mamba 状态）决定——状态越大、块越大，模型一换就跳（Qwen3.5 为 528，Qwen3.5-397B 为 2096），调用方无法干预。
+3. **无法适配负载差异**：同为 528，Conversation 型损失 100%、Tool-Agent 15.3%、Agentic 0.02%；kernel 侧 8 个配置有 8 种最优。固定一个值必然在部分负载上最差，且部署前无法预知线上是哪种负载。
+4. **无法满足后端约束**：后端白名单只接受 16/32/64 的倍数，528 与 1568 各丢 3 条路径并被**静默换后端**；非 2 的幂还要多付 7.3% 的 lane padding。
+
+因此「固定」的代价不是平均变慢，而是**选择权交出去之后，用户既不能改、也不能提前发现**。
+
 ## 3. 实验设置
 
 | 项 | 取值 |
@@ -58,11 +69,31 @@ $$P=\frac{b_{j^*}\cdot\Lambda}{m_{j^*}}$$
 | 硬件 | RTX 4060 Laptop，8 GB，sm_89，24 SM；torch 2.11.0+cu128，triton 3.8.0 |
 | kernel 实现 | 自写 Triton paged-decode kernel（vLLM v2 结构），16 种块大小 × 8 个配置 |
 | KV/token | **144 KiB**（2(K+V)×36 层×8 KV head×head_dim 128×bf16） |
-| trace | Mooncake Conversation（1200 请求 / 16,848,754 token）、Mooncake Tool-Agent、LMCache Agentic（10 session / 500 iteration）、合成 Agentic（200 session） |
+| trace | 4 组，详见 §3.1（含下载地址与真实/合成标注） |
 | 预算 | 8 / 16 / 40 / 160 GB（另设"不淘汰"参考口径） |
 | 淘汰策略 | LRU（块粒度），当前请求的块在结束前不可淘汰（同 vLLM `ref_cnt>0`） |
 | 命中语义 | 从第 0 块起连续命中的整块数，遇第一个 miss 即停；尾块不缓存 |
 | 换算 | `capacity_blocks = ⌊budget / (block_size × 144 KiB)⌋`；prefill 0.06 ms/token（线性 proxy，仅用于同负载相对比较） |
+
+### 3.1 实验用了哪些 trace
+
+**前提**：这批 trace 都**不携带模型身份**。Mooncake 与 LMCache 记录的是请求形态（到达、输入长度、前缀哈希集合），与具体模型无关；「混合注意力」是我们套用的对象，不是 trace 自带的属性。
+
+| trace | 下载地址 | 规模（本次使用） | 长度 mean / p95 / max | 共享结构 | 仿真套用的模型几何 |
+|---|---|---|---|---|---|
+| **Mooncake Conversation** | [conversation_trace.jsonl](https://raw.githubusercontent.com/kvcache-ai/Mooncake/main/FAST25-release/traces/conversation_trace.jsonl) | 1200 请求 / **16,848,754** token | 14,041 / 47,730 / **122,889** | 相邻请求公共前缀**恰好 1 个 512-token 块**（1200 对全部如此） | Qwen3.5-9B 类，**144 KiB/token** |
+| **Mooncake Tool-Agent** | [toolagent_trace.jsonl](https://raw.githubusercontent.com/kvcache-ai/Mooncake/main/FAST25-release/traces/toolagent_trace.jsonl) | 1200 请求 / **11,473,215** token | 9,561 / 27,158 / **121,924** | 跨多个 chunk，长度混杂 | 同上 |
+| **LMCache Agentic** | [train-00000-of-00005.parquet](https://huggingface.co/datasets/sammshen/lmcache-agentic-traces/resolve/main/data/train-00000-of-00005.parquet) | 10 session / 500 iteration / **15,326,575** token | 30,653 / 53,897 / **86,109** | 相邻 iteration 共享 **>99%**，前缀长且连续 | **真实 tokenizer：Qwen/Qwen3-8B**；几何 144 KiB/token |
+| **合成 Agentic**（兜底） | 本地生成器 `workload.gen_synthetic_agentic()`，无外部地址 | 200 session → 2591 请求 / **35,582,283** token | 13,733 / 28,363 / **41,349** | Zipf(α=1.1) 文档共享（受控构造） | 同上 |
+
+**数据集入口**：Mooncake 仓库 <https://github.com/kvcache-ai/Mooncake>（目录 `FAST25-release/traces/`）；LMCache agentic 数据集 <https://huggingface.co/datasets/sammshen/lmcache-agentic-traces>。
+
+**三点必须说明**：
+
+- **只有 LMCache 给了真 tokenizer**（Qwen3-8B）。Mooncake 的 `hash_ids` 是**块大小 512 token** 的前缀哈希（官方 README 明示，我们逐条校验 `len(hash_ids) == ceil(input_len/512)`）——这就是「528 打不过 512」的现场来源。
+- **合成 Agentic 完全由本地代码生成**（随机种子 20261026，可复现）：200 session、每 session 5–20 轮、全局共享系统提示 800–2000 token、以 35% 概率注入 512/1024/2048 长度的文档、文档池 500 篇按 Zipf 抽取。它只用于**受控对照**（考察共享密度对块大小伤害的影响），**不是真实负载证据**。
+- **KV 传输用的是另一套几何**：Qwen3.5-9B 类 128 KiB/token（32 层，128k 下总 16 GiB），以及 Kimi-K3 类 768 KiB/token（假设值，其公开规格未发布，仅看趋势）。两处几何不同，引用时请对上是哪个实验台。
+
 
 ## 4. 实验结果
 
