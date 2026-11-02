@@ -8,6 +8,8 @@
   DSA / QSA / MSA / CSA / HCA 五种机制的独立图解讲义，含交互实验与预算计算器
 - [block_size 对混合注意力推理的影响](/notes/ai-infra/block-size-hybrid) ——
   vLLM HMA 下块大小被 lcm 推导、用户不可调的代价：kernel / KV 传输 / 前缀复用 / 显存尾块四维实测，含 12 张实验图
+- [块大小能否修改、改了有什么影响](/notes/ai-infra/block-size-modifiable) ——
+  从源码、上游 RFC/issue、论文、其他引擎四条线核对：`--block-size` 只能往大改，匹配粒度可用 `--prefix-match-unit` 单独下探，显存与命中的影响分别有多大
 
 ## 计划中的笔记
 
