@@ -139,7 +139,7 @@ Invalid prefix_match_unit=64; all KV cache block sizes must be divisible by pref
 **论文**
 
 - **Jenga（SOSP'25，arXiv 2503.18292，DOI 10.1145/3731569.3764823）是 vLLM 这套方案的原论文。** 它比较过 GCD/MAX/LCM 三种兼容页，指出 MAX 页的病理："Jamba 52B 要求每个自注意力页 1344 token，超过 ShareGPT 平均请求 1085 token"；但对 LCM 自身的命中损失只写了一句"未观察到性能退化"，**没有量化**。这是目前最明确的空白。
-- **DualPools** 给出了最接近的端到端数字：把 1557 KiB 的大页拆成细页后，吞吐提升 47.6%~56.2%，b63 处 TTFT p99 从 3.687 s 降到 0.578 s。但它原生 16-token 细粒度在大预算下反而比折中方案差 12.6%，说明**粒度收益不单调，与显存预算耦合**。
+- **DualPools** 给出了一组端到端数字，但要注意它改的不是块大小：attention 侧的 512-token 块全程固定（论文原话 `held fixed … without per-organization optimization`），改的是 recurrent 状态的**页构成**——从 1557 KiB 的统一大页拆成 3 个 512 KiB 成员页加一个 conv 页。结果是吞吐提升 47.6%~56.2%，b63 处 TTFT p99 从 3.687 s 降到 0.578 s。它的另一个设计点（原生 16-token）在大预算下反输 12.6%，说明页结构与预算耦合，但这不能读成"块大小收益不单调"。
 - **Marconi（MLSys'25）是不改粒度的对照组**：靠准入策略把命中提升 4.5~34.4×，同时是唯一量化过"块大小 → 复用率"的工作（block 32 时 KV 块复用 25.0%，而 SSM 状态复用仅 0.4%）。
 - **AVMP（arXiv 2605.22416）**做两级分页：底层细页，上层合并成注意力块或 Mamba 块。
 - **GraniKV 已撤稿**（作者声明吞吐测量方法有误），其 page-size-1 的收益数据不可引用。
