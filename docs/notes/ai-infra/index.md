@@ -23,5 +23,5 @@
 ## 待办
 
 - [ ] 建一份「显存估算速查表」（参数 / 优化器状态 / KV cache / 激活值）
-- [周会汇报：block size 实测进展](/notes/ai-infra/block-size-weekly) ——
+- [block size 实测进展](/notes/ai-infra/block-size-weekly) ——
   推导与可改性已定论；显存差距已实测（块翻倍容量 −32.7%）；性能与块内复用部分完成，TBD 占位待回填

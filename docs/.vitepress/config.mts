@@ -74,7 +74,7 @@ export default defineConfig({
             { text: '长上下文注意力图解', link: '/notes/ai-infra/long-context-attention' },
             { text: 'block_size 对混合注意力推理的影响', link: '/notes/ai-infra/block-size-hybrid' },
             { text: '块大小能否修改、改了有什么影响', link: '/notes/ai-infra/block-size-modifiable' },
-            { text: '周会汇报：block size 实测进展', link: '/notes/ai-infra/block-size-weekly' }
+            { text: 'block size 实测进展', link: '/notes/ai-infra/block-size-weekly' }
           ]
         },
         {
