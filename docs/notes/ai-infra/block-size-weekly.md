@@ -189,7 +189,7 @@ t* = 状态页字节 / 每 token 注意力字节
 
 机制解释：混合模型的前缀命中要按组取交集。注意力组可以按 16 粒度哈希，但 **Mamba 组的检查点仍在块边界（544）上**，交集之后注意力侧的细粒度命中被否决，最终仍然只能命中 544 的整数倍。
 
-这条结论很重要：**块内复用不能替代"改块大小"**（至少在 align 模式、本 vLLM 版本上）。上游 RFC #45702 的另一半（Mamba 状态的部分命中 + 写时复制）尚未实现，缺的正是这一半。
+这条结论很重要：**块内复用不能替代"改块大小"**（至少在 align 模式、本 vLLM 版本上）。上游其实**已经实现了块内命中与写时复制**（vLLM 0.32.0：`allow_partial_hash_hits` 默认 True，`_partial_hit_reqs` + CoW redirect 存在，`MambaManager.supports_fine_grained_hash_lookup = True`）。但 align 模式下 `MambaManager.has_positionally_stable_blocks` 返回 False（源码注释：align 模式会清空中间状态、原地迁移投机块），块位置不稳定 → 细粒度命中没有兑现。**结论：不是缺实现，而是 align 模式吃不到这项收益。**
 
 ## 六、数据取舍与还缺什么
 
