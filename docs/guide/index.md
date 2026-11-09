@@ -5,7 +5,6 @@
 ## 站点结构
 
 ```
-tju-yxq.github.io/homepage/   学术主页（Jekyll，仓库 tju-yxq/homepage）
 tju-yxq.github.io/wiki/       本笔记站（VitePress，仓库 tju-yxq/wiki）
 tju-yxq.github.io/            导航页（仓库 tju-yxq/tju-yxq.github.io）
 ```
