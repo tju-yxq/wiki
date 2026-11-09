@@ -199,3 +199,134 @@ t* = 状态页字节 / 每 token 注意力字节
 - 命中率 = 压测期间 `vllm:prefix_cache_hits_total` / `queries_total` 增量比；
 - "受控容量" = `--kv-cache-memory-bytes 34359738368`（32 GiB）；"部署口径" = `--gpu-memory-utilization 0.85`；
 - 块大小通过 `--block-size` 传入，实际值由 `Setting attention block size to N tokens` 或引擎配置核对。
+
+## 八、实验设置与口径（全部实验）
+
+### 8.1 硬件与软件
+
+| 项 | 值 |
+|---|---|
+| 机器 | 8×A800-SXM4-80GB（单卡 80 GB），NVLINK |
+| 实验用卡 | 每次只用 **1 张**（并发实验时按空闲卡分配），未使用多卡聚合（TP 实验除外，且未成功） |
+| 容器 | `yxq-sweep`（GPU5）、`yxq-par2`（GPU4）、`yxq-par3`（GPU6）、`yxq-blk-9b`（GPU4，9B 基线） |
+| 镜像 | `yxq-vllm:0.32.0`（基于实验室镜像 + pip 安装） |
+| vLLM | **0.32.0** |
+| PyTorch | 2.13.0+cu130 |
+| 必须的环境变量 | `FLASHINFER_DISABLE_VERSION_CHECK=1`（底层镜像 flashinfer-cubin 0.6.12 与新装 flashinfer 0.7.0.post1 不匹配，否则引擎启动失败） |
+| 精度 | bf16 |
+
+### 8.2 模型
+
+| 模型 | 路径 | 结构 | 默认块大小 |
+|---|---|---|---|
+| Qwen3.5-2B | `/models/qwen35-2b` | 24 层 = 18 线性 + 6 全注意力，hidden 2048，kv_heads 2，head_dim 256 | **544** |
+| Qwen3.5-9B | `/models/qwen35-9b` | 32 层 = 24 线性 + 8 全注意力，hidden 4096，kv_heads 4，head_dim 256 | **528** |
+
+### 8.3 服务端参数
+
+所有正式测量统一使用：
+
+```
+--enable-prefix-caching
+--max-model-len 4352          # 见下方说明
+--gpu-memory-utilization 0.85 # 部署口径
+--prefix-match-unit 16        # 性能实验里固定为 16，避免与块大小混淆
+```
+
+**为什么 `--max-model-len` 是 4352 而不是 4096**：负载 A 是 `in=4096 + out=256 = 4352`。若设 4096，vLLM 对全部 200 个请求返回 `400 Bad Request`（实测 `completed=0 failed=200`），bench 结果全 0。改成 4352 后 `completed=200 failed=0`，块大小之间仍同配置可比。
+
+容量口径两种，其余参数不变：
+
+| 口径 | 参数 | 含义 |
+|---|---|---|
+| 受控 | `--kv-cache-memory-bytes 34359738368`（32 GiB） | 固定 **字节预算**；注意它不固定 token 容量（padding 会吃掉容量） |
+| 部署 | `--gpu-memory-utilization 0.85` | 容量随块大小变化，接近真实部署 |
+
+块大小通过 `--block-size` 传入；磁实值用启动日志的 `Setting attention block size to N tokens` 或 `non-default args` 里的 `block_size` 核对。1088 档的 padding 为 105.28%。
+
+### 8.4 负载
+
+| 负载 | 数据集 | 参数 | 用途 |
+|---|---|---|---|
+| **A 无复用** | `random` | `in=4096, out=256, num_prompts=200, concurrency=32` | 测纯计算/解码性能，命中率结构上应为 0 |
+| **B 有复用** | `prefix_repetition` | `prefix=1024, suffix=512, num_prefixes=8, out=64, num_prompts=64, concurrency=8` | 测前缀复用；每请求总长 1536 |
+
+### 8.5 指标定义
+
+| 指标 | 来源 |
+|---|---|
+| 吞吐 | bench JSON 的 `total_token_throughput`（输入+输出 tok/s） |
+| TTFT 均值 / P99 | bench JSON 的 `mean_ttft_ms` / `p99_ttft_ms` |
+| TPOT | bench JSON 的 `mean_tpot_ms` |
+| E2E P99 | 逐请求 `latencies` 的 99 分位 |
+| 命中率 | 压测前后 `/metrics` 的 `vllm:prefix_cache_hits_total` 与 `queries_total` 增量比 |
+| padding | 启动日志 `Padding mamba page size by X%` |
+| KV token 容量 | 启动日志 `GPU KV cache size: N tokens` |
+| 实际块大小 | 启动日志 `Setting attention block size to N tokens` 或 `non-default args` |
+
+### 8.6 测量流程（每格）
+
+1. 杀旧 server，等端口释放、显存回到 ~1 MiB；
+2. 起 server，等 `/health` 通过（最多 600 s）；
+3. **归属校验**：确认本格日志里有 `Setting attention block size` 或 `non-default args` 的块大小，且 server 是本格新起的；
+4. 抓 `/metrics` before；
+5. 跑 `vllm bench serve`（即 `vllm bench` 子命令，`--backend openai`）；
+6. 抓 `/metrics` after，算命中增量；
+7. 停 server。
+
+### 8.7 未做/不可比的设置
+
+| 项 | 说明 |
+|---|---|
+| `--enforce-eager` | 只在显存曲线阶段用过（为了加快启动）。**它关闭 CUDA graph，吞吐只有约 10.5k tok/s，与 37k 不可比**，对应的性能数据全部作废 |
+| TP=1/2 对照 | 需 2 张卡，实验时机器只剩 1 张空闲卡，未完成 |
+| 多实例 / 跨节点 | KV 传输维度未测 |
+| 重复实验 | 每格 n=1，无重复与置信区间（这是本批数据的最大局限） |
+
+## 九、数据有效性与取舍
+
+### 9.1 采用的数据
+
+| 数据集 | 格数 | 采集条件 |
+|---|---|---|
+| 块大小显存曲线 | 14 点（544–1216） | 只启动读日志，`--enforce-eager`，指标与 eager 无关 |
+| 块大小 × 吞吐（受控） | 544/768/1024 × A/B | 无争抢窗口，归属校验通过 |
+| 块大小 × 吞吐（部署） | 544/768/1024 × A，544/768 × B | 同上 |
+| 块内复用 | 默认 vs unit=16 × 前缀 400/1000 | 参数生效已在日志确认 |
+| 9B 基线 | 1 格 | 单卡启动 |
+
+### 9.2 弃用的数据与原因
+
+| 数据 | 弃用原因 |
+|---|---|
+| 某并行测试线的 768/1024 × A（−15.7%/−15.2%） | 该批 run 期间同机有 3–5 个批测进程争用，server 被 `SIGKILL`；且其 544 档与清洁批次只差 0.08%、768/1024 却差 15%，判为干扰偏差 |
+| `--enforce-eager` 下的 672/896/1216 吞吐（约 10.5k） | 关闭 CUDA graph，与主表口径不一致 |
+| `--prefix-match-unit 48 / 176` | **不是 544 的约数**（544=16×34），启动即失败，属配置非法而非实验失败 |
+| 1088 档压测 | server 能启动（padding 105.28%），但压测前被外部进程杀掉，从未成功服务请求 |
+| TP=2 全部 | 需要 2 张卡，资源不足，未执行 |
+
+### 9.3 交叉验证
+
+两条独立测试线在 544 档的读数：37,449（A 组）对 37,478（B 组），差 **0.08%**。说明**单格测量本身可靠**，坏的是调度争用；这也是 `9.2` 里判 768/1024 偏差为干扰的依据。
+
+## 十、有效数据的分析
+
+只基于 9.1 的数据。
+
+**结论 1：块大小对吞吐没有实质影响。**
+受控口径 37,478 / 37,403 / 37,292（544/768/1024），最大差 **0.5%**；部署口径 37,553 / 37,414 / 37,400，最大差 **0.4%**。TPOT 在 9.19–9.68 ms 间波动，无单调趋势。两种独立口径给出同一结论。
+
+**结论 2：块变大的代价全部落在可用容量上。**
+14 点扫描中，KV token 容量从 2,898,432 降到 1,888,332（**−34.8%**）。padding 与块大小严格线性（每 +32 token 增 6.04 个百分点，反推 t\*≈530），因此容量损失可以预测。
+
+**结论 3：容量并不是性能瓶颈，所以上一条的损失是纯亏。**
+同一块大小（544）只换容量口径：容量 +76.4%（1,597,805 → 2,818,925），吞吐只 +2.1%。说明在这套负载下多出来的容量换不到性能。
+
+**结论 4：有复用负载的收益完全由命中几何决定。**
+命中 = `floor(前缀长度/块大小) × 块大小`。前缀 1024 下：544 命中 544、768 命中 768、1024 命中 1024，命中率 26.6% → 42.0% → 55.2%。核算显示 TTFT 降 22.8% 与 prefill 计算量降 22.6% 吻合。**换前缀长度结论会变，尤其前缀 < 块大小时命中归零。**
+
+**结论 5：块内复用对混合模型当前无效。**
+默认与 unit=16 的命中逐字节相同（0/58,370 与 26,112/96,768）。机制是协调器按组取交集，Mamba 组检查点仍在 544 边界上，注意力侧的细粒度命中被否决。**判别实验（配 `prefix_cache_retention_interval > 0`）尚未做**，因此“无效”的结论限于当前配置。
+
+**结论 6：块大小不随模型规模单调。**
+2B 是 544、9B 是 528。两者只差一个 16 的对齐单位，由 t\* 比值决定。
