@@ -42,12 +42,7 @@ export default defineConfig({
   },
 
   themeConfig: {
-    nav: [
-      { text: '首页', link: '/' },
-      { text: '笔记', link: '/notes/' },
-      { text: '使用说明', link: '/guide/' },
-      { text: '关于', link: '/about' }
-    ],
+    nav: [],
 
     sidebar: {
       '/notes/': [
