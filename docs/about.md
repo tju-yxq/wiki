@@ -5,9 +5,9 @@
 研究方向：**AI for AI**、**LLM Safety**、**Multi-Agent System**、**AI Infra**。
 
 这个站点是我的笔记工作台 —— 读论文的推导、漏洞复现的过程、踩过的坑和可复用的配置都在这里。
-正式的个人介绍、论文与经历在[学术主页](https://tju-yxq.github.io/homepage/)。
+正式的个人介绍、论文与经历放在学术主页（目前整理中，暂时下线）。
 
-- 学术主页：[tju-yxq.github.io/homepage](https://tju-yxq.github.io/homepage/)
+- 学术主页：整理中，暂时下线
 - GitHub：[@tju-yxq](https://github.com/tju-yxq)
 - 站点源码：[tju-yxq/wiki](https://github.com/tju-yxq/wiki)
 - 邮箱：<3023209091@tju.edu.cn>
