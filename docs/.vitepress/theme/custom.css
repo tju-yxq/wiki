@@ -229,23 +229,20 @@
   }
 }
 
-/* 折叠按钮：贴在左上角，不遮挡内容 */
+/* 折叠按钮：放在导航栏右侧，参与 flex 布局，不会压到正文 */
 .sb-toggle {
-  position: fixed;
-  top: 12px;
-  left: 12px;
-  z-index: 60;
-  width: 30px;
-  height: 30px;
   display: none;
   align-items: center;
   justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 6px;
   padding: 0;
   border: 1px solid var(--vp-c-divider);
   border-radius: 6px;
-  background: var(--vp-c-bg);
+  background: transparent;
   color: var(--vp-c-text-2);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1;
   cursor: pointer;
   transition: color 0.15s ease, border-color 0.15s ease;
@@ -258,11 +255,6 @@
 
 @media (min-width: 960px) {
   .sb-toggle {
-    display: flex;
-    left: 268px;
-  }
-
-  html.sb-collapsed .sb-toggle {
-    left: 12px;
+    display: inline-flex;
   }
 }

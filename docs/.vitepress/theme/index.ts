@@ -3,47 +3,63 @@ import './custom.css'
 
 const STORAGE_KEY = 'wiki-sidebar-collapsed'
 
-function setupSidebarToggle() {
+function applyState(collapsed: boolean) {
+  document.documentElement.classList.toggle('sb-collapsed', collapsed)
+  const btn = document.getElementById('sb-toggle')
+  if (btn) {
+    btn.textContent = collapsed ? '»' : '«'
+    btn.title = collapsed ? '展开侧边栏' : '收起侧边栏'
+    btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true')
+  }
+  try {
+    localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0')
+  } catch {}
+}
+
+function mountToggle() {
   if (document.getElementById('sb-toggle')) return
+
+  // 放进导航栏右侧的 flex 区域，跟着导航栏排版，不会覆盖正文
+  const host =
+    document.querySelector('.VPNavBar .content-body') ||
+    document.querySelector('.VPNavBar .content') ||
+    document.querySelector('.VPNavBar .container')
+  if (!host) return
 
   const btn = document.createElement('button')
   btn.id = 'sb-toggle'
   btn.className = 'sb-toggle'
   btn.type = 'button'
-  btn.setAttribute('aria-label', '收起或展开侧边栏')
-
-  const apply = (collapsed: boolean) => {
-    document.documentElement.classList.toggle('sb-collapsed', collapsed)
-    btn.textContent = collapsed ? '»' : '«'
-    btn.title = collapsed ? '展开侧边栏' : '收起侧边栏'
-    try {
-      localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0')
-    } catch {}
-  }
-
   btn.addEventListener('click', () => {
-    apply(!document.documentElement.classList.contains('sb-collapsed'))
+    applyState(!document.documentElement.classList.contains('sb-collapsed'))
   })
-
-  document.body.appendChild(btn)
+  host.insertBefore(btn, host.firstChild)
 
   let saved = false
   try {
     saved = localStorage.getItem(STORAGE_KEY) === '1'
   } catch {}
-  apply(saved)
+  applyState(saved)
 }
 
 export default {
   extends: DefaultTheme,
   enhanceApp() {
     if (typeof window === 'undefined') return
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', setupSidebarToggle)
-    } else {
-      setupSidebarToggle()
+    const boot = () => {
+      mountToggle()
+      // SPA 路由切换后重新挂载，并沿用已保存的状态
+      window.addEventListener('vitepress:routeChanged', () => {
+        setTimeout(() => {
+          mountToggle()
+          applyState(document.documentElement.classList.contains('sb-collapsed'))
+        }, 0)
+      })
     }
-    // SPA 路由切换后按钮可能被移除，重新挂一次
-    window.addEventListener('vitepress:routeChanged', () => setTimeout(setupSidebarToggle, 0))
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot)
+    } else {
+      boot()
+    }
   }
 }
