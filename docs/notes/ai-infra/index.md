@@ -25,3 +25,5 @@
 - [ ] 建一份「显存估算速查表」（参数 / 优化器状态 / KV cache / 激活值）
 - [block size 实测进展](/notes/ai-infra/block-size-weekly) ——
   推导与可改性已定论；显存差距已实测（块翻倍容量 −32.7%）；性能与块内复用部分完成，TBD 占位待回填
+- [Gemma 4：128 到 6144 的块大小实测](/notes/ai-infra/block-size-gemma4) ——
+  纯注意力（25 滑窗 + 5 全局）模型上块大小的端到端与注意力 kernel 实测：TTFT +17%、TPOT 不变、容量 −34%、prefill kernel +600%
