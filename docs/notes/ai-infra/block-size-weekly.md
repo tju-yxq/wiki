@@ -7,6 +7,7 @@ description: block size 的推导与可改性、改大后的显存与性能差�
 
 > 状态：**主体已完成**。块大小语义、容量曲线、性能、块内复用、TP 对照、9B 对照均已实测；剩余输出正确性与重复实验。
 > 环境：A800-80GB 单卡，vLLM 0.32.0，bf16，Qwen3.5-2B（默认块 544）/ Qwen3.5-9B（默认块 528）。
+> 第二篇（SWA/Full 模型，Gemma 4）见 [SWA/Full 模型 block size 实测](/notes/ai-infra/block-size-gemma4)。
 
 ## 一、本周汇报三件事
 
