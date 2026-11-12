@@ -186,3 +186,25 @@
     transform: none;
   }
 }
+
+/* 表格铺满正文宽度：VitePress 默认 display:block 只按内容宽度收缩 */
+.vp-doc table {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.vp-doc table th,
+.vp-doc table td {
+  word-break: break-word;
+}
+
+/* 窄屏仍退回可横向滚动，避免列被压得不可读 */
+@media (max-width: 720px) {
+  .vp-doc table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
