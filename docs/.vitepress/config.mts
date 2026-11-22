@@ -69,7 +69,8 @@ export default defineConfig({
             { text: 'block_size 对混合注意力推理的影响', link: '/notes/ai-infra/block-size-hybrid' },
             { text: '块大小能否修改、改了有什么影响', link: '/notes/ai-infra/block-size-modifiable' },
             { text: 'block size 实测进展', link: '/notes/ai-infra/block-size-weekly' },
-            { text: 'SWA/Full 模型 block size 实测进展', link: '/notes/ai-infra/block-size-gemma4' }
+            { text: 'SWA/Full 模型 block size 实测进展', link: '/notes/ai-infra/block-size-gemma4' },
+            { text: 'Qwen3.8 KV 预算与吞吐实测', link: '/notes/ai-infra/qwen38-kv-budget' }
           ]
         },
         {
