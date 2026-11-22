@@ -9,7 +9,7 @@ export default defineConfig({
   base,
   lang: 'zh-CN',
   title: "xdz' wiki",
-  description: 'LLM Safety · Multi-Agent System · AI Infra —— 学习笔记与工程记录',
+  description: 'LLM Safety / Multi-Agent System / AI Infra 学习笔记与工程记录',
   cleanUrls: false,
   lastUpdated: true,
 
@@ -119,8 +119,8 @@ export default defineConfig({
         // VitePress 默认的 minisearch 分词对中文无效：整段中文会被当成一个 token，
         // 于是搜「鲁棒」找不到「多轮对话中的越狱鲁棒性」。这里用 Intl.Segmenter
         // 做中文分词（无该 API 的浏览器退化为二元组），构建端和查询端共用同一份
-        // 实现 —— VitePress 会把此函数序列化进客户端 site data，注意必须自包含，
-        // 不能引用模块作用域的变量。
+        // 实现（VitePress 会把此函数序列化进客户端 site data，注意必须自包含，
+        // 不能引用模块作用域的变量）。
         miniSearch: {
           options: {
             tokenize: (text: string) => {
@@ -188,7 +188,7 @@ export default defineConfig({
 
     footer: {
       message: '内容以 CC BY 4.0 共享，代码以 MIT 授权',
-      copyright: '© 2026 喻新强 · 由 VitePress 构建'
+      copyright: '© 2026 喻新强，由 VitePress 构建'
     }
   }
 })

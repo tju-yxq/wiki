@@ -5,7 +5,7 @@ layout: home
 <div class="cover">
   <p class="cover__eyebrow">xdz' wiki</p>
   <h1 class="cover__title">笔记写到能复现为止</h1>
-  <p class="cover__meta">LLM Safety · Multi-Agent System · AI Infra · Cybersecurity · Engineering</p>
+  <p class="cover__meta">LLM Safety / Multi-Agent System / AI Infra / Cybersecurity / Engineering</p>
 </div>
 
 <nav class="index" aria-label="笔记分类">

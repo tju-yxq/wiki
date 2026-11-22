@@ -16,13 +16,13 @@ tju-yxq.github.io/            导航页（仓库 tju-yxq/tju-yxq.github.io）
 **第一步**，在对应分类目录下新建 Markdown 文件，例如 `docs/notes/security/my-note.md`：
 
 ```markdown
-# 笔记标题（标题即结论，别写「关于 XXX 的一些思考」）
+# 笔记标题（准确概括主题即可）
 
-一句话说清这篇要解决什么问题。
+说明这篇笔记的背景与要讨论的问题。
 
-## 结论先行
+## 背景与环境
 
-能给结论就先给结论，读者不一定读完。
+记录实验环境、前置条件或问题背景。
 
 ## 正文
 
@@ -122,7 +122,7 @@ VitePress 支持自定义主题（`.vitepress/theme/`）与 Vue 组件直接嵌�
 
 ::: warning 三条容易踩的坑
 1. **文件内部的绝对路径不会被改。** VitePress 只改写 Markdown 和 Vue 组件里的链接，
-   `public/` 里的 HTML 原封不动。所以页面里别写 `href="/assets/x.css"`——
+   `public/` 里的 HTML 原封不动。所以页面里别写 `href="/assets/x.css"`，
    那会指向站点根目录而不是 `/wiki/`。用相对路径（`./x.css`、`../img/a.png`），
    或者自己手动写全 `/wiki/...`。
 2. **文件名用小写英文 + 连字符。** 构建跑在 Linux 上，大小写敏感（本地 Windows 不敏感，
@@ -140,7 +140,7 @@ VitePress 支持自定义主题（`.vitepress/theme/`）与 Vue 组件直接嵌�
 <iframe src="/wiki/demo/index.html" style="width:100%;height:720px;border:1px solid #8884;border-radius:8px"></iframe>
 ```
 
-注意 `src` 要手写 `/wiki/` 前缀 —— Markdown 里的 HTML 属性同样不会被自动改写。
+注意 `src` 要手写 `/wiki/` 前缀，因为 Markdown 里的 HTML 属性同样不会被自动改写。
 
 ### 直接在笔记里写 HTML
 

@@ -14,7 +14,7 @@ description: 从 vLLM 源码、上游 RFC/issue、论文与其他引擎四条线
 | 块大小怎么来的 | 由 Mamba 状态页字节数反解，**不是**直接取最小公倍数；多组时才 lcm |
 | 能否指定 | 能，但只能**往大**改；小于推导值会被抬回去 |
 | 能否把匹配粒度改细 | 能，`--prefix-match-unit`，但必须整除块大小，且**默认不生效** |
-| 528 是哪个参数的值 | 是 `block_size` 的值，不是命令行参数，而是 `--block-size` 被推导覆盖后的结果 |
+| 528 是哪个参数的值 | 生效后的 `block_size` 值，由推导逻辑覆写命令行 `--block-size` 后得到 |
 | 只改块大小有实测吗 | **没有**。公开数字改的都是共享前缀长度、匹配粒度或分配结构，块大小始终固定 |
 | 那它们说明了什么 | 块大小与负载共享前缀的对齐关系决定命中：块大小固定为 528 时，命中可在 54.0% 与 25.5% 之间摆动 |
 | 有没有人系统扫过这一维 | 论文页大小全为常量；GitHub 上 `prefix-match-unit` 的 1,094 条命中全是单点配置 |
@@ -29,7 +29,7 @@ attn_block_size = alignment * cdiv(mamba_page_size, alignment * attn_page_size_1
 
 即用 Mamba 状态页字节数除以"每 token 注意力页字节数"，向上取整得到注意力块大小；然后强制 `mamba_block_size = block_size`，再把 Mamba 页 padding 到注意力页。**只有存在多个缓存组时**，才由 `resolve_kv_cache_block_sizes` 取 LCM（`vllm/v1/core/kv_cache_utils.py`）。
 
-因为 `get_num_kv_heads(parallel_config)` 参与计算，所以**块大小随张量并行度变化**——这解释了为什么同一模型换 TP 值就跳。
+因为 `get_num_kv_heads(parallel_config)` 参与计算，所以**块大小随张量并行度变化**，这也解释了同一模型切换 TP 值时块大小会跳变。
 
 上游 PR #64624 给出了更宽的表述：`lcm(kernel alignment, backend alignment, prefix_match_unit)`，即推导输入除了 Mamba 状态，还包含 kernel 与后端的对齐要求。
 
@@ -53,7 +53,7 @@ Padding mamba page size by X%
 
 混合模型下还有一条镜像关系：`mamba_block_size = block_size`，即 528 同时也是 Mamba 侧的块大小。
 
-## 二、已观测到的取值跨度比想象大
+## 二、已观测到的块大小取值范围
 
 | 块大小 | 模型 / 条件 |
 |---:|---|
@@ -139,7 +139,7 @@ Invalid prefix_match_unit=64; all KV cache block sizes must be divisible by pref
 **论文**
 
 - **Jenga（SOSP'25，arXiv 2503.18292，DOI 10.1145/3731569.3764823）是 vLLM 这套方案的原论文。** 它比较过 GCD/MAX/LCM 三种兼容页，指出 MAX 页的病理："Jamba 52B 要求每个自注意力页 1344 token，超过 ShareGPT 平均请求 1085 token"；但对 LCM 自身的命中损失只写了一句"未观察到性能退化"，**没有量化**。这是目前最明确的空白。
-- **DualPools** 给出了一组端到端数字，但要注意它改的不是块大小：attention 侧的 512-token 块全程固定（论文原话 `held fixed … without per-organization optimization`），改的是 recurrent 状态的**页构成**——从 1557 KiB 的统一大页拆成 3 个 512 KiB 成员页加一个 conv 页。结果是吞吐提升 47.6%~56.2%，b63 处 TTFT p99 从 3.687 s 降到 0.578 s。它的另一个设计点（原生 16-token）在大预算下反输 12.6%，说明页结构与预算耦合，但这不能读成"块大小收益不单调"。
+- **DualPools** 给出了一组端到端数字，但要注意它改的不是块大小：attention 侧的 512-token 块全程固定（论文原话 `held fixed … without per-organization optimization`），改的是 recurrent 状态的**页构成**，即将 1557 KiB 的统一大页拆成 3 个 512 KiB 成员页加一个 conv 页。结果是吞吐提升 47.6%~56.2%，b63 处 TTFT p99 从 3.687 s 降到 0.578 s。它的另一个设计点（原生 16-token）在大预算下反输 12.6%，说明页结构与预算耦合，但这不能读成"块大小收益不单调"。
 - **Marconi（MLSys'25）是不改粒度的对照组**：靠准入策略把命中提升 4.5~34.4×，同时是唯一量化过"块大小 → 复用率"的工作（block 32 时 KV 块复用 25.0%，而 SSM 状态复用仅 0.4%）。
 - **AVMP（arXiv 2605.22416）**做两级分页：底层细页，上层合并成注意力块或 Mamba 块。
 - **GraniKV 已撤稿**（作者声明吞吐测量方法有误），其 page-size-1 的收益数据不可引用。
@@ -155,7 +155,7 @@ Invalid prefix_match_unit=64; all KV cache block sizes must be divisible by pref
 
 **没有任何引擎提供"每组独立页大小"的参数**，都是用"分组建池 + 组间配额"吸收异质性。vLLM 的统一页是它自己的取舍，而 RFC #64401 正在讨论移除。
 
-## 六点五、真正的空白：没人只改块大小
+## 七、现有工作的变量覆盖情况
 
 把已有工作按"改了什么"归类，可以看出空位在哪：
 
@@ -169,7 +169,7 @@ Invalid prefix_match_unit=64; all KV cache block sizes must be divisible by pref
 
 GitHub 代码搜索 `"prefix-match-unit"` 命中约 1,094 条，全部是单点配置，没有两条不同块大小的对照。这就是可以补的位。
 
-## 七、如果要自己测，三个自变量要拆开
+## 八、实测方案与自变量拆分
 
 1. **物理块大小**：`--block-size`，只能 ≥ 推导值；
 2. **匹配粒度**：`--prefix-match-unit`，必须整除块大小；
@@ -192,7 +192,7 @@ GitHub 代码搜索 `"prefix-match-unit"` 命中约 1,094 条，全部是单点�
 - 正确性门槛用 LMCache 的 `hma_lm_eval`（gsm8k 两遍，中间 reset 前缀缓存，要求分数一致；GDN 混合模型不保证逐 token 一致）；
 - 注意 `benchmarks/benchmark_serving.py` 在当前版本已是 deprecated shim，直接跑会 exit 1，要用 `vllm bench serve`。
 
-## 七点五、可以在本机复算的部分
+## 九、本机可复算项
 
 不依赖 GPU 也能算的三件事（脚本与结果见 `experiments/A2_verify_block_size/`）：
 
@@ -202,9 +202,9 @@ GitHub 代码搜索 `"prefix-match-unit"` 命中约 1,094 条，全部是单点�
 | 粒度可选值 | 528 可用 16 / 48 / 176；784 只有 16 / 112；944 与 2096 只有 16 |
 | 尾块与并发 | 600-token 请求：块 528 占 1056（浪费 43.2%、并发 55），块 1056 仍占 1056（并发 55），块 2112 占 2112（并发 27） |
 
-第三条值得注意：**块调大不一定单调增加尾块浪费**——600 token 在 528 下要两块、在 1056 下一块，占用相同；到 2112 才翻倍。所以"块越大越浪费"只在特定长度区间成立。
+从第三条可以看出，**块调大不一定单调增加尾块浪费**：600 token 在 528 下占两块、在 1056 下占一块，总占用相同，到 2112 才翻倍。因此"块越大越浪费"只在特定长度区间成立。
 
-## 八、四个容易踩的误读
+## 十、常见误解核对
 
 1. **"块大小是 lcm 算的"**：只在多组时才 lcm，主路径是状态页反解。
 2. **"用户完全不能指定"**：能往大改，只是不能往小改；匹配粒度还能独立下探。
