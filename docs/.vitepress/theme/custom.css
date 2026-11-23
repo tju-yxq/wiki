@@ -1,10 +1,10 @@
 /**
- * xdz' wiki —— 自定义样式
+ * xdz' wiki 自定义样式
  *
- * 只做三件事，不动组件结构：
- *   1. 品牌色从默认蓝换成与 tju-yxq.github.io 导航页一致的墨绿
- *   2. 版心加宽（默认正文只有 688px，太窄）
- *   3. 首页封面 + 分类索引的排版
+ * 1. 品牌色：与主站一致的墨绿
+ * 2. 版心与阅读排版：默认收起侧边栏时居中 1020px，适配长图表与宽表格
+ * 3. 首页封面与索引排版
+ * 4. 侧边栏折叠、阅读进度条、图表点击放大预览
  */
 
 /* ============ 1. 品牌色 ============ */
@@ -23,25 +23,57 @@
   --vp-c-brand-soft: rgba(91, 191, 157, 0.16);
 }
 
-/* ============ 2. 版心宽度 ============ */
+/* ============ 2. 版心与阅读排版 ============ */
 
 :root {
   --vp-layout-max-width: 1600px;
 }
 
-/* 正文默认 688px，读笔记时左右太空。加到 860px 仍有约 70 字符/行。 */
 .VPDoc .content-container {
-  max-width: 860px;
+  max-width: 880px;
+}
+
+.vp-doc h1 {
+  letter-spacing: -0.015em;
+}
+
+.vp-doc h2 {
+  margin-top: 40px;
+  padding-top: 22px;
+  letter-spacing: -0.01em;
+}
+
+.vp-doc blockquote {
+  border-left: 3px solid var(--vp-c-brand-1);
+  background: var(--vp-c-bg-soft);
+  border-radius: 0 6px 6px 0;
+  padding: 12px 16px;
+}
+
+.vp-doc blockquote > p {
+  color: var(--vp-c-text-1);
+}
+
+/* 图表卡片质感 + 点击放大提示 */
+.vp-doc img {
+  border-radius: 8px;
+  border: 1px solid var(--vp-c-divider);
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+  cursor: zoom-in;
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.vp-doc img:hover {
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.1);
 }
 
 /* ============ 3. 首页封面与索引 ============ */
 
-/* 首页不再用 hero/features，整块自定义排版 */
 .VPHome .vp-doc {
   max-width: none;
 }
 
-/* VitePress 的 .vp-doc a 会给索引行套上绿色下划线，这里全部就近覆盖 */
 .vp-doc .index__row {
   color: inherit;
   text-decoration: none;
@@ -88,7 +120,6 @@
   color: var(--vp-c-text-2);
 }
 
-/* 索引：一条一条的目录行，而不是一排等宽卡片 */
 .index {
   padding-block: 0 88px;
 }
@@ -154,12 +185,10 @@
   border-radius: 2px;
 }
 
-/* 首页不需要 VitePress 给 .VPHome 预留的 128px 底边距 */
 .VPHome {
   margin-bottom: 0;
 }
 
-/* 窄屏：编号 + 名称一行，描述换到下一行 */
 @media (max-width: 720px) {
   .vp-doc .index .index__row {
     grid-template-columns: 2.5rem 1fr 1.25rem;
@@ -178,7 +207,10 @@
 
 @media (prefers-reduced-motion: reduce) {
   .index__name,
-  .index__arrow {
+  .index__arrow,
+  .vp-doc img,
+  .VPSidebar,
+  .VPContent.has-sidebar {
     transition: none;
   }
 
@@ -187,20 +219,33 @@
   }
 }
 
-/* 表格铺满正文宽度：VitePress 默认 display:block 只按内容宽度收缩 */
+/* ============ 4. 表格优化 ============ */
+
 .vp-doc table {
   display: table;
   width: 100%;
   border-collapse: collapse;
   table-layout: auto;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.92rem;
+}
+
+.vp-doc table th {
+  background: var(--vp-c-bg-soft);
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+}
+
+.vp-doc table tr:hover td {
+  background: var(--vp-c-brand-soft);
 }
 
 .vp-doc table th,
 .vp-doc table td {
   word-break: break-word;
+  padding: 9px 12px;
 }
 
-/* 窄屏仍退回可横向滚动，避免列被压得不可读 */
 @media (max-width: 720px) {
   .vp-doc table {
     display: block;
@@ -209,52 +254,132 @@
   }
 }
 
-/* ---------- 桌面端：整条侧边栏可折叠 ---------- */
+/* ============ 5. 桌面端侧边栏默认可折叠 ============ */
+
 @media (min-width: 960px) {
+  .VPSidebar {
+    transition: transform 0.22s ease, opacity 0.22s ease;
+  }
+
+  .VPContent.has-sidebar {
+    transition: padding-left 0.22s ease;
+  }
+
   html.sb-collapsed {
     --vp-sidebar-width: 0px !important;
   }
 
   html.sb-collapsed .VPSidebar {
-    display: none;
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
   }
 
   html.sb-collapsed .VPContent.has-sidebar {
     padding-left: 0 !important;
   }
 
-  html.sb-collapsed .VPDoc .container,
+  html.sb-collapsed .VPNavBar.has-sidebar .content {
+    padding-left: 32px !important;
+  }
+
+  html.sb-collapsed .VPNavBar.has-sidebar .divider {
+    padding-left: 0 !important;
+  }
+
+  html.sb-collapsed .VPDoc .container {
+    max-width: 1280px !important;
+  }
+
   html.sb-collapsed .VPDoc .content-container {
-    max-width: 100% !important;
+    max-width: 1020px !important;
   }
 }
 
-/* 折叠按钮：放在导航栏右侧，参与 flex 布局，不会压到正文 */
+/* 顶部导航栏侧边栏开关按钮 */
 .sb-toggle {
   display: none;
   align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  margin-right: 6px;
-  padding: 0;
+  gap: 6px;
+  height: 32px;
+  margin-right: 10px;
+  padding: 0 10px;
   border: 1px solid var(--vp-c-divider);
-  border-radius: 6px;
-  background: transparent;
+  border-radius: 8px;
+  background: var(--vp-c-bg-soft);
   color: var(--vp-c-text-2);
   font-size: 13px;
+  font-weight: 500;
   line-height: 1;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .sb-toggle:hover {
-  color: var(--vp-c-text-1);
-  border-color: var(--vp-c-text-3);
+  color: var(--vp-c-brand-1);
+  border-color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+}
+
+.sb-toggle__label {
+  letter-spacing: 0.02em;
 }
 
 @media (min-width: 960px) {
   .sb-toggle {
     display: inline-flex;
   }
+}
+
+/* ============ 6. 顶部阅读进度条 ============ */
+
+.reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: 0%;
+  background: var(--vp-c-brand-1);
+  z-index: 100;
+  pointer-events: none;
+  transition: width 0.08s linear;
+}
+
+/* ============ 7. 图片点击放大预览 ============ */
+
+.img-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.82);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  cursor: zoom-out;
+  transition: opacity 0.18s ease;
+}
+
+.img-lightbox.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.img-lightbox__img {
+  max-width: 95vw;
+  max-height: 92vh;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  transform: scale(0.97);
+  transition: transform 0.18s ease;
+}
+
+.img-lightbox.is-open .img-lightbox__img {
+  transform: scale(1);
 }
