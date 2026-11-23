@@ -228,22 +228,14 @@ def plot_fig1_throughput_scaling(records: list[dict[str, Any]]) -> None:
     c20 = [r for r in records if r["conc"] == 20]
     c24 = [r for r in records if r["conc"] == 24][0]
 
-    fig, axes = plt.subplots(2, 2, figsize=(13.5, 9.4), dpi=260)
-    fig.subplots_adjust(left=0.075, right=0.935, top=0.875, bottom=0.085, wspace=0.25, hspace=0.35)
+    fig, axes = plt.subplots(2, 2, figsize=(13.5, 9.2), dpi=260)
+    fig.subplots_adjust(left=0.075, right=0.935, top=0.905, bottom=0.085, wspace=0.25, hspace=0.35)
     fig.suptitle(
-        "Qwen38-Flash-Next 多并发 KV Cache 预算扩展吞吐与边际效率分析 (1800s 正式窗口)",
+        "Qwen3.8-Flash-Next 多并发 KV Cache 预算扩展吞吐与边际效率分析 (1800s 正式窗口)",
         fontsize=14,
         fontweight="bold",
         color="#0F172A",
         y=0.965,
-    )
-    fig.text(
-        0.5,
-        0.926,
-        "4×GPU TP4 | 基准 KV 预算 1.00× = 25.8 GiB/卡 | 统一口径：1800s 窗口内完成请求的可见输出 token/s",
-        ha="center",
-        fontsize=9.5,
-        color=MUTED,
     )
 
     # --- Panel (a): Output throughput vs KV budget ---
@@ -484,22 +476,14 @@ def plot_fig2_timeseries(records: list[dict[str, Any]]) -> None:
 
     ts_map = {lbl: load_timeseries(by_label[lbl]) for lbl, *_ in selected}
 
-    fig, axes = plt.subplots(3, 1, figsize=(13.2, 9.6), dpi=260, sharex=True)
-    fig.subplots_adjust(left=0.075, right=0.80, top=0.895, bottom=0.075, hspace=0.22)
+    fig, axes = plt.subplots(3, 1, figsize=(13.2, 9.4), dpi=260, sharex=True)
+    fig.subplots_adjust(left=0.075, right=0.80, top=0.92, bottom=0.075, hspace=0.22)
     fig.suptitle(
         "1800s 正式压测窗口内部动态时序：KV 利用率、等待队列与前缀缓存命中率",
         fontsize=13.8,
         fontweight="bold",
         color="#0F172A",
-        y=0.96,
-    )
-    fig.text(
-        0.44,
-        0.922,
-        "数据来源：vLLM Engine 000 10s 级运行日志 (server.log.gz)，已严格对齐各臂 normalization.json 窗口起点 t = 0 min",
-        ha="center",
-        fontsize=9.2,
-        color=MUTED,
+        y=0.965,
     )
 
     # --- Panel (a): GPU KV Cache Usage (%) ---
@@ -641,22 +625,14 @@ def plot_fig3_mechanism_phase(records: list[dict[str, Any]]) -> None:
     c20 = [r for r in records if r["conc"] == 20]
     c24 = [r for r in records if r["conc"] == 24][0]
 
-    fig, axes = plt.subplots(1, 3, figsize=(15.2, 5.4), dpi=260)
-    fig.subplots_adjust(left=0.058, right=0.98, top=0.80, bottom=0.145, wspace=0.22)
+    fig, axes = plt.subplots(1, 3, figsize=(15.2, 5.2), dpi=260)
+    fig.subplots_adjust(left=0.058, right=0.98, top=0.85, bottom=0.145, wspace=0.22)
     fig.suptitle(
         "KV 预算影响吞吐的因果机制相图：9 组正式实验臂的全景映射",
         fontsize=13.8,
         fontweight="bold",
         color="#0F172A",
         y=0.955,
-    )
-    fig.text(
-        0.5,
-        0.895,
-        "箭头方向表示 KV 预算从 1.00× 扩展至 1.30× 的状态迁移轨迹；并发升高使工作点向右/左下移入容量受限区",
-        ha="center",
-        fontsize=9.3,
-        color=MUTED,
     )
 
     # --- Panel (a): KV P95 Utilization vs Throughput (with regime zones) ---
@@ -808,22 +784,14 @@ def plot_fig4_latency_breakdown(records: list[dict[str, Any]]) -> None:
     c20 = [r for r in records if r["conc"] == 20]
     c24 = [r for r in records if r["conc"] == 24][0]
 
-    fig, axes = plt.subplots(1, 3, figsize=(15.4, 5.5), dpi=260)
-    fig.subplots_adjust(left=0.058, right=0.98, top=0.80, bottom=0.16, wspace=0.25)
+    fig, axes = plt.subplots(1, 3, figsize=(15.4, 5.3), dpi=260)
+    fig.subplots_adjust(left=0.058, right=0.98, top=0.85, bottom=0.16, wspace=0.25)
     fig.suptitle(
         "首字延迟 (TTFT)、解码间隔 (ITL) 与服务端排队延迟剖析 (全 9 臂)",
         fontsize=13.8,
         fontweight="bold",
         color="#0F172A",
         y=0.955,
-    )
-    fig.text(
-        0.5,
-        0.895,
-        "数据来源：AIPerf profile_export_aiperf.json 与 vLLM server_metrics_export.csv | 纵轴采用对数坐标以同时呈现常规区间与 c24 过载量级",
-        ha="center",
-        fontsize=9.1,
-        color=MUTED,
     )
 
     xs = np.array([0, 1, 2, 3, 4.7, 5.7, 6.7, 7.7, 9.4])
