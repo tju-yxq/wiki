@@ -249,21 +249,3 @@ docker exec -d -e CUDA_VISIBLE_DEVICES=<4 个 GPU UUID> \
   sh -c 'exec setsid taskset -c 26-51 /root/yk/.venv-agentx/bin/python -B \
     /root/yk/sequence_capacity_concurrency_sweep.py --concurrencies <并发数>'
 ```
-
-完整实验交付包为 `A4_qwen38_capacity_20261122.zip`，目录结构如下：
-
-```text
-code/                         全部实验执行与分析脚本（121 个文件）
-  run_capacity_long_start.py          单臂执行器（启动 vLLM、执行 AgentX、采集与对账）
-  sequence_capacity_concurrency_sweep.py  并发扫描控制器（GPU 空闲等待、预热、重试）
-  report_capacity_campaign.py         单组四臂报告与 SHA-256 清单生成
-results/campaigns/            campaign JSON、ledger 与 trace manifest
-results/arms/<arm>/           全部 9 个正式臂及失败臂的 run.json、normalization.json、
-                              measurement_window*、rank*_budget.json、client.log、
-                              server.log.gz 与 agentx 原始导出（含 aiperf JSON 与服务端 CSV）
-results/reports/              并发 16 与并发 20 两份正式报告及 evidence_sha256.json
-results/figures/              跨并发汇总数据 cross_concurrency_data.json
-docs/                         原始实验报告、EXPERIMENT_SETTING.md 与进度记录
-```
-
-本文嵌入的 4 张分析图由 `wiki/scripts/plot_qwen38.py` 直接读取 `results/arms/` 下的原始 JSON、CSV 与 `server.log.gz` 生成，确保所有数值与原始交付包保持一致。
