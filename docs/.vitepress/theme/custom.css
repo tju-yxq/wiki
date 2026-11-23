@@ -33,6 +33,20 @@
   max-width: 880px;
 }
 
+/* 正文段落首行缩进 2 字符（排除引用块、列表、表格、提示块与独立图片行） */
+.VPDoc .vp-doc p {
+  text-indent: 2em;
+}
+
+.VPDoc .vp-doc blockquote p,
+.VPDoc .vp-doc li p,
+.VPDoc .vp-doc td p,
+.VPDoc .vp-doc th p,
+.VPDoc .vp-doc .custom-block p,
+.VPDoc .vp-doc p:has(> img:only-child) {
+  text-indent: 0;
+}
+
 .vp-doc h1 {
   letter-spacing: -0.015em;
 }
@@ -272,6 +286,7 @@
   html.sb-collapsed .VPSidebar {
     transform: translateX(-100%);
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
   }
 
@@ -279,8 +294,30 @@
     padding-left: 0 !important;
   }
 
+  /* 侧边栏收起后，把顶部栏标题恢复为正常文档流，避免与右侧按钮/搜索框重叠 */
+  html.sb-collapsed .VPNavBar.has-sidebar .wrapper {
+    padding: 0 32px !important;
+  }
+
+  html.sb-collapsed .VPNavBar.has-sidebar .container {
+    max-width: var(--vp-layout-max-width);
+  }
+
+  html.sb-collapsed .VPNavBar.has-sidebar .title {
+    position: static !important;
+    width: auto !important;
+    padding: 0 !important;
+    flex-shrink: 0;
+  }
+
+  html.sb-collapsed .VPNavBar.has-sidebar .VPNavBarTitle.has-sidebar .title {
+    border-bottom-color: transparent !important;
+  }
+
   html.sb-collapsed .VPNavBar.has-sidebar .content {
-    padding-left: 32px !important;
+    padding-left: 24px !important;
+    padding-right: 0 !important;
+    flex-grow: 1;
   }
 
   html.sb-collapsed .VPNavBar.has-sidebar .divider {
