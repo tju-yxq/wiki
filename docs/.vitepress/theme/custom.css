@@ -258,7 +258,10 @@
 
 .vp-doc table th,
 .vp-doc table td {
-  word-break: break-word;
+  text-align: center !important;
+  vertical-align: middle;
+  word-break: keep-all;
+  overflow-wrap: break-word;
   padding: 9px 15px;
 }
 
