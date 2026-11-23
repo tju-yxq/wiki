@@ -149,8 +149,8 @@ def load_arm_metrics() -> list[dict[str, Any]]:
                 "label": f"c{conc}-b{budget_pct}",
                 "start_s": nm["start_ns"] / 1e9,
                 "end_s": nm["sent_end_ns"] / 1e9,
-                "tok_s": nm["primary_output_tokens_s"],
-                "ro_tok_s": nm["reasoning_plus_output_tokens_s"],
+                "tok_s": nm["reasoning_plus_output_tokens_s"],
+                "vis_tok_s": nm["primary_output_tokens_s"],
                 "reqs": nm["successful_requests"],
                 "req_s": nm["primary_requests_s"],
                 "kv_avg": float(sm["vllm:kv_cache_usage_perc"]["avg"]) * 100.0,
@@ -238,16 +238,13 @@ def plot_fig1_throughput_scaling(records: list[dict[str, Any]]) -> None:
         y=0.965,
     )
 
-    # --- Panel (a): Output throughput vs KV budget ---
+    # --- Panel (a): Full output throughput (reasoning + visible) vs KV budget ---
     ax = axes[0, 0]
     clean_spines(ax)
     x16 = [r["budget_mult"] for r in c16]
     y16 = [r["tok_s"] for r in c16]
     x20 = [r["budget_mult"] for r in c20]
     y20 = [r["tok_s"] for r in c20]
-
-    ax.axhline(271.0, color="#94A3B8", linestyle=":", linewidth=1.2, zorder=1)
-    ax.text(0.97, 297.0, "可见输出平台 (~271 tok/s)", fontsize=8.3, color=MUTED, ha="left")
 
     ax.plot(x16, y16, "-o", color=C16, lw=2.3, ms=7.2, label="conc=16 (1.00×–1.30×)", zorder=4)
     ax.plot(x20, y20, "-s", color=C20, lw=2.3, ms=7.2, label="conc=20 (1.00×–1.30×)", zorder=5)
@@ -263,8 +260,8 @@ def plot_fig1_throughput_scaling(records: list[dict[str, Any]]) -> None:
         label="conc=24 基线探索点 (1.00×)",
     )
 
-    # Careful non-overlapping annotations
-    offsets_16 = [(0, 10), (0, 10), (0, 10), (0, 10)]
+    # Careful non-overlapping annotations (c20 crosses above c16 at 1.10x)
+    offsets_16 = [(0, 11), (0, -16), (0, -16), (0, -16)]
     for (x, y), (dx, dy) in zip(zip(x16, y16), offsets_16):
         ax.annotate(
             f"{y:.1f}",
@@ -276,7 +273,7 @@ def plot_fig1_throughput_scaling(records: list[dict[str, Any]]) -> None:
             fontweight="bold",
             color=C16,
         )
-    offsets_20 = [(0, -16), (4, -16), (6, -16), (0, -17)]
+    offsets_20 = [(0, -16), (0, 11), (0, 11), (0, 11)]
     for (x, y), (dx, dy) in zip(zip(x20, y20), offsets_20):
         ax.annotate(
             f"{y:.1f}",
@@ -291,7 +288,7 @@ def plot_fig1_throughput_scaling(records: list[dict[str, Any]]) -> None:
     ax.annotate(
         f"c24-b100: {c24['tok_s']:.1f} tok/s\n(KV 峰值 100%, 过载)",
         xy=(1.0, c24["tok_s"]),
-        xytext=(1.07, 56),
+        xytext=(1.07, 195),
         fontsize=8.3,
         fontweight="bold",
         color=C24,
@@ -299,13 +296,13 @@ def plot_fig1_throughput_scaling(records: list[dict[str, Any]]) -> None:
         bbox=dict(boxstyle="round,pad=0.3", fc="#FEF2F2", ec="#FECACA", lw=0.8),
     )
 
-    ax.set_title("(a) 可见输出吞吐随 KV 预算变化")
+    ax.set_title("(a) 全量输出吞吐随 KV 预算变化 (含推理)")
     ax.set_xlabel("KV Cache 预算倍数 (每卡容量)")
-    ax.set_ylabel("可见输出吞吐 (tok/s)")
+    ax.set_ylabel("全量输出吞吐 (tok/s)")
     ax.set_xticks([1.0, 1.1, 1.2, 1.3])
     ax.set_xticklabels(["1.00×\n(25.8G)", "1.10×\n(28.4G)", "1.20×\n(31.0G)", "1.30×\n(33.6G)"])
     ax.set_xlim(0.96, 1.35)
-    ax.set_ylim(10, 316)
+    ax.set_ylim(80, 625)
     ax.grid(True, axis="y")
     ax.legend(loc="lower right")
 
@@ -318,7 +315,7 @@ def plot_fig1_throughput_scaling(records: list[dict[str, Any]]) -> None:
 
     # Shaded regions above and below y=x
     x_line = np.linspace(0, 32, 100)
-    ax.fill_between(x_line, x_line, 50, color="#FFF7ED", alpha=0.65, zorder=0)
+    ax.fill_between(x_line, x_line, 44, color="#FFF7ED", alpha=0.65, zorder=0)
     ax.fill_between(x_line, 0, x_line, color="#F8FAFC", alpha=0.85, zorder=0)
     ax.plot(x_line, x_line, "--", color=SLATE, lw=1.4, label="1:1 线性参考线 (斜率=1.0×)", zorder=2)
 
@@ -337,7 +334,7 @@ def plot_fig1_throughput_scaling(records: list[dict[str, Any]]) -> None:
             color=C20,
         )
     for x, y in zip(dx_vals[1:], g16[1:]):
-        dy = 9 if x == 10 else -15
+        dy = -16 if x == 10 else -15
         ax.annotate(
             f"+{y:.1f}%",
             (x, y),
@@ -349,16 +346,16 @@ def plot_fig1_throughput_scaling(records: list[dict[str, Any]]) -> None:
             color=C16,
         )
 
-    ax.text(4.5, 42.5, "超线性收益区 (Δ吞吐% > ΔKV%)", fontsize=8.4, color="#9A3412", fontweight="bold")
-    ax.text(17.5, 4.0, "亚线性饱和区 (Δ吞吐% < ΔKV%)", fontsize=8.4, color=MUTED)
+    ax.text(4.0, 38.0, "超线性收益区 (Δ吞吐% > ΔKV%)", fontsize=8.4, color="#9A3412", fontweight="bold")
+    ax.text(17.5, 3.2, "亚线性饱和区 (Δ吞吐% < ΔKV%)", fontsize=8.4, color=MUTED)
 
-    ax.set_title("(b) 相对吞吐增益与 1:1 线性基准对比")
+    ax.set_title("(b) 相对全量吞吐增益与 1:1 线性基准对比")
     ax.set_xlabel("KV 预算相对增量 (+Δ%)")
     ax.set_ylabel("相对吞吐增益 (%)")
     ax.set_xticks([0, 10, 20, 30])
     ax.set_xticklabels(["+0%\n(1.00×)", "+10%\n(1.10×)", "+20%\n(1.20×)", "+30%\n(1.30×)"])
     ax.set_xlim(-1.5, 33.0)
-    ax.set_ylim(-2, 49)
+    ax.set_ylim(-2, 43)
     ax.grid(True)
     ax.legend(loc="upper left", bbox_to_anchor=(0.01, 0.84))
 
@@ -375,7 +372,7 @@ def plot_fig1_throughput_scaling(records: list[dict[str, Any]]) -> None:
     ax.axhline(1.0, color=SLATE, linestyle="--", lw=1.4, zorder=4)
     ax.text(
         1.52,
-        1.07,
+        1.06,
         "1.0× 线性平衡线",
         ha="center",
         fontsize=8.2,
@@ -387,21 +384,21 @@ def plot_fig1_throughput_scaling(records: list[dict[str, Any]]) -> None:
 
     for b in bars16:
         h = b.get_height()
-        ax.text(b.get_x() + b.get_width() / 2, h + 0.06, f"{h:.2f}×", ha="center", va="bottom", fontsize=8.6, fontweight="bold", color=C16)
+        ax.text(b.get_x() + b.get_width() / 2, h + 0.04, f"{h:.2f}×", ha="center", va="bottom", fontsize=8.6, fontweight="bold", color=C16)
     for b in bars20:
         h = b.get_height()
-        ax.text(b.get_x() + b.get_width() / 2, h + 0.06, f"{h:.2f}×", ha="center", va="bottom", fontsize=8.6, fontweight="bold", color=C20)
+        ax.text(b.get_x() + b.get_width() / 2, h + 0.04, f"{h:.2f}×", ha="center", va="bottom", fontsize=8.6, fontweight="bold", color=C20)
 
-    ax.set_title("(c) 预算边际转换比 (Δ吞吐% / ΔKV预算%)")
+    ax.set_title("(c) 预算边际转换比 (Δ全量吞吐% / ΔKV预算%)")
     ax.set_xlabel("KV 预算扩容档位")
     ax.set_ylabel("转换比 (倍)")
     ax.set_xticks(cats)
     ax.set_xticklabels(["+10% (1.10×)", "+20% (1.20×)", "+30% (1.30×)"])
-    ax.set_ylim(0, 3.05)
+    ax.set_ylim(0, 2.30)
     ax.grid(True, axis="y")
     ax.legend(loc="upper right")
 
-    # --- Panel (d): Completed Requests + Total (Reasoning + Output) tok/s ---
+    # --- Panel (d): Completed Requests + Visible Output tok/s (reference) ---
     ax = axes[1, 1]
     clean_spines(ax, keep_right=True)
     ax.spines["right"].set_color("#94A3B8")
@@ -410,13 +407,12 @@ def plot_fig1_throughput_scaling(records: list[dict[str, Any]]) -> None:
     labels = ["b100", "b110", "b120", "b130", "b100", "b110", "b120", "b130", "b100"]
     xs = np.array([0, 1, 2, 3, 4.6, 5.6, 6.6, 7.6, 9.2])
     reqs = [r["reqs"] for r in records]
-    ro_s = [r["ro_tok_s"] for r in records]
+    vis_s = [r["vis_tok_s"] for r in records]
     bar_colors = [C16] * 4 + [C20] * 4 + [C24]
 
     bars = ax.bar(xs, reqs, width=0.66, color=bar_colors, alpha=0.82, edgecolor="white", zorder=3, label="完成请求数 (左轴)")
     for i, (x, req) in enumerate(zip(xs, reqs)):
         if i < 4:
-            # Place c16 counts cleanly inside bar top so the overlaid right-axis line never touches them
             ax.text(x, req - 55, f"{req}", ha="center", va="top", fontsize=7.9, color="#FFFFFF", fontweight="bold", zorder=5)
         else:
             ax.text(x, req + 22, f"{req}", ha="center", va="bottom", fontsize=7.9, color="#1E293B", fontweight="bold", zorder=5)
@@ -426,35 +422,31 @@ def plot_fig1_throughput_scaling(records: list[dict[str, Any]]) -> None:
     ax2.spines["left"].set_visible(False)
     ax2.spines["right"].set_color("#475569")
 
-    # Plot reasoning+output tok/s separately per concurrency group so lines don't bridge gaps
-    ax2.plot(xs[:4], ro_s[:4], "-o", color="#1E3A8A", lw=1.9, ms=5.5, zorder=6, label="推理+输出总吞吐 (右轴)")
-    ax2.plot(xs[4:8], ro_s[4:8], "-s", color="#7C2D12", lw=1.9, ms=5.5, zorder=6)
-    ax2.scatter([xs[8]], [ro_s[8]], marker="D", s=45, color="#450A0A", zorder=6)
+    ax2.plot(xs[:4], vis_s[:4], "-o", color="#1E3A8A", lw=1.9, ms=5.5, zorder=6, label="可见输出吞吐 (右轴)")
+    ax2.plot(xs[4:8], vis_s[4:8], "-s", color="#7C2D12", lw=1.9, ms=5.5, zorder=6)
+    ax2.scatter([xs[8]], [vis_s[8]], marker="D", s=45, color="#450A0A", zorder=6)
 
-    # Annotate key right-axis endpoints cleanly without colliding with bar labels
-    ax2.annotate(f"{ro_s[3]:.0f}", (xs[3], ro_s[3]), xytext=(0, 8), textcoords="offset points", ha="center", fontsize=7.9, color="#1E3A8A", fontweight="bold")
-    ax2.annotate(f"{ro_s[4]:.0f}", (xs[4], ro_s[4]), xytext=(-12, -13), textcoords="offset points", ha="center", fontsize=7.9, color="#7C2D12", fontweight="bold")
-    ax2.annotate(f"{ro_s[7]:.0f}", (xs[7], ro_s[7]), xytext=(10, -14), textcoords="offset points", ha="center", fontsize=7.9, color="#7C2D12", fontweight="bold")
-    ax2.annotate(f"{ro_s[8]:.0f}", (xs[8], ro_s[8]), xytext=(0, -14), textcoords="offset points", ha="center", fontsize=7.9, color="#450A0A", fontweight="bold")
+    ax2.annotate(f"{vis_s[3]:.0f}", (xs[3], vis_s[3]), xytext=(0, 8), textcoords="offset points", ha="center", fontsize=7.9, color="#1E3A8A", fontweight="bold")
+    ax2.annotate(f"{vis_s[4]:.0f}", (xs[4], vis_s[4]), xytext=(-12, -13), textcoords="offset points", ha="center", fontsize=7.9, color="#7C2D12", fontweight="bold")
+    ax2.annotate(f"{vis_s[7]:.0f}", (xs[7], vis_s[7]), xytext=(10, -14), textcoords="offset points", ha="center", fontsize=7.9, color="#7C2D12", fontweight="bold")
+    ax2.annotate(f"{vis_s[8]:.0f}", (xs[8], vis_s[8]), xytext=(0, -14), textcoords="offset points", ha="center", fontsize=7.9, color="#450A0A", fontweight="bold")
 
-    # Group brackets / labels under x-axis
     ax.text(1.5, -245, "conc=16", ha="center", fontsize=8.8, fontweight="bold", color=C16)
     ax.text(6.1, -245, "conc=20", ha="center", fontsize=8.8, fontweight="bold", color=C20)
     ax.text(9.2, -245, "c24", ha="center", fontsize=8.8, fontweight="bold", color=C24)
 
-    ax.set_title("(d) 1800s 有效请求完成数与全量输出吞吐 (含推理)")
+    ax.set_title("(d) 1800s 有效请求完成数与可见输出吞吐 (参考口径)")
     ax.set_ylabel("完成请求数 (reqs / 1800s)")
-    ax2.set_ylabel("推理+可见输出吞吐 (tok/s)", color="#334155")
+    ax2.set_ylabel("可见输出吞吐 (tok/s)", color="#334155")
     ax.set_xticks(xs)
     ax.set_xticklabels(labels, fontsize=8.2)
     ax.set_ylim(0, 1560)
-    ax2.set_ylim(0, 760)
+    ax2.set_ylim(0, 390)
     ax.grid(True, axis="y")
 
-    # Combined legend
     h1, l1 = ax.get_legend_handles_labels()
     h2, l2 = ax2.get_legend_handles_labels()
-    ax.legend(h1[:1] + h2[:1], ["完成请求数 (左轴)", "推理+输出 tok/s (右轴)"], loc="upper left", fontsize=8.2)
+    ax.legend(h1[:1] + h2[:1], ["完成请求数 (左轴)", "可见输出 tok/s (右轴)"], loc="upper left", fontsize=8.2)
 
     out_path = OUT_DIR / "qwen38_throughput_scaling.png"
     fig.savefig(out_path)
@@ -468,10 +460,10 @@ def plot_fig1_throughput_scaling(records: list[dict[str, Any]]) -> None:
 def plot_fig2_timeseries(records: list[dict[str, Any]]) -> None:
     by_label = {r["label"]: r for r in records}
     selected = [
-        ("c16-b100", "c16-b100 (236.1 tok/s, 轻压基线)", C16, "-", 1.6),
-        ("c20-b100", "c20-b100 (190.3 tok/s, 中高压受限)", C20, "-", 1.9),
-        ("c20-b130", "c20-b130 (270.1 tok/s, +30% 扩容后)", C20_B130, "-", 1.9),
-        ("c24-b100", "c24-b100 (38.2 tok/s, 容量过载)", C24, "-", 2.0),
+        ("c16-b100", "c16-b100 (437.0 tok/s, 轻压基线)", C16, "-", 1.6),
+        ("c20-b100", "c20-b100 (408.6 tok/s, 中高压受限)", C20, "-", 1.9),
+        ("c20-b130", "c20-b130 (559.7 tok/s, +30% 扩容后)", C20_B130, "-", 1.9),
+        ("c24-b100", "c24-b100 (144.8 tok/s, 容量过载)", C24, "-", 2.0),
     ]
 
     ts_map = {lbl: load_timeseries(by_label[lbl]) for lbl, *_ in selected}
@@ -644,9 +636,9 @@ def plot_fig3_mechanism_phase(records: list[dict[str, Any]]) -> None:
     ax.axvline(60, color="#10B981", ls="--", lw=0.9, alpha=0.7)
     ax.axvline(80, color="#EF4444", ls="--", lw=0.9, alpha=0.7)
 
-    ax.text(48.5, 319, "KV 充裕区\n(近似平台)", ha="center", va="top", fontsize=8.1, color="#065F46", fontweight="bold")
-    ax.text(70.0, 319, "容量受限区\n(扩容高弹性)", ha="center", va="top", fontsize=8.1, color="#92400E", fontweight="bold")
-    ax.text(91.0, 319, "过载退化区\n(频繁排队驱逐)", ha="center", va="top", fontsize=8.1, color="#991B1B", fontweight="bold")
+    ax.text(48.5, 622, "KV 充裕区\n(近似平台)", ha="center", va="top", fontsize=8.1, color="#065F46", fontweight="bold")
+    ax.text(70.0, 622, "容量受限区\n(扩容高弹性)", ha="center", va="top", fontsize=8.1, color="#92400E", fontweight="bold")
+    ax.text(91.0, 622, "过载退化区\n(频繁排队驱逐)", ha="center", va="top", fontsize=8.1, color="#991B1B", fontweight="bold")
 
     # Trajectory arrows for c16 and c20
     for group, color, marker, name in [(c16, C16, "o", "conc=16"), (c20, C20, "s", "conc=20")]:
@@ -654,7 +646,6 @@ def plot_fig3_mechanism_phase(records: list[dict[str, Any]]) -> None:
         ys = [r["tok_s"] for r in group]
         ax.plot(xs, ys, color=color, lw=1.6, alpha=0.55, zorder=3)
         ax.scatter(xs, ys, color=color, marker=marker, s=68, edgecolor="white", lw=0.8, label=name, zorder=5)
-        # Arrow from b100 to b130 along segments
         for i in range(len(xs) - 1):
             ax.annotate(
                 "",
@@ -666,16 +657,15 @@ def plot_fig3_mechanism_phase(records: list[dict[str, Any]]) -> None:
 
     ax.scatter([c24["kv_p95"]], [c24["tok_s"]], color=C24, marker="D", s=82, edgecolor="white", lw=0.9, label="conc=24 (1.00×)", zorder=6)
 
-    # Clean point labels
     lbl_pos_a = {
         "c16-b100": (4, -16),
-        "c16-b110": (-8, -16),
-        "c16-b120": (2, 10),
-        "c16-b130": (-4, -16),
+        "c16-b110": (6, -16),
+        "c16-b120": (0, 11),
+        "c16-b130": (-2, -16),
         "c20-b100": (-6, -16),
         "c20-b110": (-16, -14),
         "c20-b120": (15, 7),
-        "c20-b130": (2, 10),
+        "c20-b130": (18, 4),
         "c24-b100": (-16, 12),
     }
     for r in records:
@@ -684,11 +674,11 @@ def plot_fig3_mechanism_phase(records: list[dict[str, Any]]) -> None:
         col = C16 if r["conc"] == 16 else (C20 if r["conc"] == 20 else C24)
         ax.annotate(short, (r["kv_p95"], r["tok_s"]), xytext=(dx, dy), textcoords="offset points", ha="center", fontsize=8.0, fontweight="bold", color=col)
 
-    ax.set_title("(a) KV P95 利用率 vs 有效吞吐")
+    ax.set_title("(a) KV P95 利用率 vs 全量输出吞吐")
     ax.set_xlabel("GPU KV Cache P95 利用率 (%)")
-    ax.set_ylabel("可见输出吞吐 (tok/s)")
+    ax.set_ylabel("全量输出吞吐 (tok/s)")
     ax.set_xlim(37, 101)
-    ax.set_ylim(10, 330)
+    ax.set_ylim(80, 640)
     ax.grid(True, axis="y")
     ax.legend(loc="lower left")
 
@@ -711,13 +701,12 @@ def plot_fig3_mechanism_phase(records: list[dict[str, Any]]) -> None:
 
     ax.scatter([c24["pc_hit_pct"]], [c24["tok_s"]], color=C24, marker="D", s=82, edgecolor="white", lw=0.9, label="conc=24 (1.00×)", zorder=6)
 
-    # Annotate key points cleanly with zero overlap
-    ax.annotate("c24-b100\n(54.8%, 38.2 tok/s)", (c24["pc_hit_pct"], c24["tok_s"]), xytext=(14, 14), textcoords="offset points", fontsize=8.1, fontweight="bold", color=C24)
+    ax.annotate("c24-b100\n(54.8%, 144.8 tok/s)", (c24["pc_hit_pct"], c24["tok_s"]), xytext=(14, 14), textcoords="offset points", fontsize=8.1, fontweight="bold", color=C24)
     ax.annotate("c20-b100\n(81.9%)", (c20[0]["pc_hit_pct"], c20[0]["tok_s"]), xytext=(-44, -22), textcoords="offset points", fontsize=8.0, fontweight="bold", color=C20)
     ax.annotate(
         "c20-b130\n(89.7%)",
         (c20[3]["pc_hit_pct"], c20[3]["tok_s"]),
-        xytext=(-68, 18),
+        xytext=(-68, 12),
         textcoords="offset points",
         fontsize=8.0,
         fontweight="bold",
@@ -728,18 +717,18 @@ def plot_fig3_mechanism_phase(records: list[dict[str, Any]]) -> None:
     ax.annotate(
         "c16-b130\n(91.8%)",
         (c16[3]["pc_hit_pct"], c16[3]["tok_s"]),
-        xytext=(-8, 18),
+        xytext=(-4, 16),
         textcoords="offset points",
         fontsize=8.0,
         fontweight="bold",
         color=C16,
     )
 
-    ax.set_title("(b) Prefix Cache 命中率 vs 有效吞吐")
+    ax.set_title("(b) Prefix Cache 命中率 vs 全量输出吞吐")
     ax.set_xlabel("全窗口 Prefix Cache 命中率 (%)")
-    ax.set_ylabel("可见输出吞吐 (tok/s)")
+    ax.set_ylabel("全量输出吞吐 (tok/s)")
     ax.set_xlim(50, 99)
-    ax.set_ylim(10, 330)
+    ax.set_ylim(80, 640)
     ax.grid(True)
 
     # --- Panel (c): Mean Waiting Queue Depth vs Throughput ---
@@ -755,19 +744,19 @@ def plot_fig3_mechanism_phase(records: list[dict[str, Any]]) -> None:
 
     ax.set_xscale("log")
     ax.set_xlim(0.08, 9.5)
-    ax.set_ylim(10, 330)
+    ax.set_ylim(80, 640)
     ax.xaxis.set_major_formatter(mticker.FormatStrFormatter("%.2g"))
 
-    ax.annotate(f"c16-b130\n(wait=0.11, Q95={c16[3]['queue_p95_s']:.1f}s)", (c16[3]["wait_avg"], c16[3]["tok_s"]), xytext=(2, 16), textcoords="offset points", fontsize=7.9, color=C16, fontweight="bold")
+    ax.annotate(f"c16-b130\n(0.11, Q95={c16[3]['queue_p95_s']:.1f}s)", (c16[3]["wait_avg"], c16[3]["tok_s"]), xytext=(-4, 18), textcoords="offset points", fontsize=7.8, color=C16, fontweight="bold")
     ax.annotate(f"c16-b100\n(0.26)", (c16[0]["wait_avg"], c16[0]["tok_s"]), xytext=(-14, -26), textcoords="offset points", fontsize=7.9, color=C16, fontweight="bold")
     ax.annotate(f"c20-b130\n(0.34, Q95={c20[3]['queue_p95_s']:.1f}s)", (c20[3]["wait_avg"], c20[3]["tok_s"]), xytext=(14, 10), textcoords="offset points", fontsize=7.9, color=C20, fontweight="bold")
     ax.annotate(f"c20-b100\n(0.93, Q95={c20[0]['queue_p95_s']:.1f}s)", (c20[0]["wait_avg"], c20[0]["tok_s"]), xytext=(8, -14), textcoords="offset points", fontsize=7.9, color=C20, fontweight="bold")
     ax.annotate(f"c24-b100\n(wait=5.65, Q95={c24['queue_p95_s']:.1f}s)", (c24["wait_avg"], c24["tok_s"]), xytext=(-102, 18), textcoords="offset points", fontsize=8.0, color=C24, fontweight="bold",
                 arrowprops=dict(arrowstyle="->", color=C24, lw=1.0))
 
-    ax.set_title("(c) 平均等待队列深度 vs 有效吞吐")
+    ax.set_title("(c) 平均等待队列深度 vs 全量输出吞吐")
     ax.set_xlabel("平均等待请求数 (reqs, 对数坐标)")
-    ax.set_ylabel("可见输出吞吐 (tok/s)")
+    ax.set_ylabel("全量输出吞吐 (tok/s)")
     ax.grid(True, which="major")
 
     out_path = OUT_DIR / "qwen38_mechanism_phase_diagram.png"

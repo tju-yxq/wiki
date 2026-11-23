@@ -9,7 +9,7 @@
 - [块大小能否修改、改了有什么影响](/notes/ai-infra/block-size-modifiable)：从源码、上游 RFC/issue、论文与其他引擎四条线索核对：`--block-size` 只能往大改，匹配粒度可用 `--prefix-match-unit` 单独下探，以及各自对显存与命中的影响
 - [block size 实测进展](/notes/ai-infra/block-size-weekly)：Qwen3.5-2B/9B 上块大小推导、显存容量曲线（块翻倍容量降 32.7%）、吞吐性能、块内复用与 TP 对照实测
 - [SWA/Full 模型 block size 实测进展（Gemma 4）](/notes/ai-infra/block-size-gemma4)：纯注意力（25 滑窗 + 5 全局）模型上块大小的端到端与注意力 kernel 实测（TTFT +16.6%、TPOT 持平、容量 −34.3%、prefill kernel +600%）
-- [Qwen3.8 KV 预算与吞吐实测](/notes/ai-infra/qwen38-kv-budget)：AgentX 长上下文负载下每卡 KV 预算 1.0B0–1.3B0 的跨并发实测（并发 16 未饱和、并发 20 超线性收益、并发 24 过载导致吞吐大幅下降约 5 倍）
+- [Qwen3.8 KV 预算与吞吐实测](/notes/ai-infra/qwen38-kv-budget)：AgentX 长上下文负载下每卡 KV 预算 1.0B0–1.3B0 的跨并发实测（全量输出口径：并发 16 未饱和 +13.3%、并发 20 超线性收益 +37.0% 达 559.7 tok/s、并发 24 过载跌至 144.8 tok/s）
 
 ## 计划中的笔记
 
