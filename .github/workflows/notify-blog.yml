@@ -6,16 +6,23 @@ on:
     paths:
       - 'docs/notes/**'
       - 'docs/public/**'
+  workflow_dispatch:
 
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger blog sync via repository_dispatch
-        if: ${{ secrets.BLOG_SYNC_TOKEN != '' }}
+        env:
+          BLOG_SYNC_TOKEN: ${{ secrets.BLOG_SYNC_TOKEN }}
         run: |
+          if [ -z "$BLOG_SYNC_TOKEN" ]; then
+            echo "BLOG_SYNC_TOKEN is not set, skipping dispatch."
+            exit 0
+          fi
           curl -fsSL -X POST \
             -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.BLOG_SYNC_TOKEN }}" \
+            -H "Authorization: Bearer $BLOG_SYNC_TOKEN" \
             https://api.github.com/repos/tju-yxq/blog/dispatches \
             -d '{"event_type":"wiki-updated"}'
+          echo "Dispatched wiki-updated to tju-yxq/blog."
